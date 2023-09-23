@@ -1,5 +1,6 @@
 games/*
 logs/*
+.vscode
 
 # Compiled class file
 *.class
