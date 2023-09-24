@@ -440,7 +440,7 @@ public class Util {
     }
 
     // Note: Does not include loc itself
-    Location[] sensableAdjLocations(Location loc) {
+    Location[] getAdjLocs(Location loc) {
         Location[] adjLocs = new Location[8];
         int idx = 0;
         int dirIdx = directions.length;

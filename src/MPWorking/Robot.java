@@ -1,6 +1,9 @@
 package MPWorking;
 
 import aic2023.user.*;
+
+import java.util.function.Predicate;
+
 import MPWorking.fast.*;
 
 public class Robot {
@@ -79,4 +82,7 @@ public class Robot {
         mapTracker.markSeen();
     }
 
+    public Location getClosestMapObj(MapObject mapObj, Predicate<Location> pred) {
+        return util.getClosestLoc(uc.senseObjects(mapObj, VISION_RANGE), pred);
+    }
 }

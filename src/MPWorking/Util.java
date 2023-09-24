@@ -1,5 +1,7 @@
 package MPWorking;
 
+import java.util.function.Predicate;
+
 import aic2023.user.*;
 
 public class Util {
@@ -415,7 +417,7 @@ public class Util {
      * We should also look at the IDs to make sure it is not this unit the one
      * that's standing on top.
      */
-    Location getClosestAvailable(Location[] locs) {
+    Location getClosestLoc(Location[] locs, Predicate<Location> pred) {
         int idx;
         Location loc = null;
         Location currLoc = uc.getLocation();
@@ -427,10 +429,7 @@ public class Util {
             loc = locs[idx];
             dist = currLoc.distanceSquared(loc);
             unit = uc.senseUnitAtLocation(loc);
-            if (unit == null ||
-                    unit.getTeam() != uc.getTeam() ||
-                    uc.getType() != UnitType.PITCHER ||
-                    unit.getID() == uc.getInfo().getID()) {
+            if (pred.test(loc)) {
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestLoc = loc;
@@ -438,5 +437,27 @@ public class Util {
             }
         }
         return bestLoc;
+    }
+
+    // Note: Does not include loc itself
+    Location[] getAdjLocs(Location loc) {
+        Location[] adjLocs = new Location[8];
+        int idx = 0;
+        int dirIdx = directions.length;
+        Location adjLoc;
+        Direction dir;
+        for (; --dirIdx >= 0;) {
+            dir = directions[dirIdx];
+            adjLoc = loc.add(dir);
+            if (uc.canSenseLocation(adjLoc)) {
+                adjLocs[idx++] = adjLoc;
+            }
+        }
+
+        Location[] sensableAdjLocs = new Location[idx];
+        for (; --idx >= 0;) {
+            sensableAdjLocs[idx] = adjLocs[idx];
+        }
+        return sensableAdjLocs;
     }
 }

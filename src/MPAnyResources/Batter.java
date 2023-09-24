@@ -14,7 +14,7 @@ public class Batter extends Robot {
 
         // None of our batters around the location
         Predicate<Location> availablePred = (loc) -> {
-            Location[] adjLocs = util.sensableAdjLocations(loc);
+            Location[] adjLocs = util.getAdjLocs(loc);
             for (Location adjLoc : adjLocs) {
                 UnitInfo unit = uc.senseUnitAtLocation(adjLoc);
                 if (unit != null &&

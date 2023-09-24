@@ -57,6 +57,15 @@ public class Comms {
         writeSymmetryRotational(1);
     }
 
+    public void resetUnitCount() {
+        writeNumPitchersLast(readNumPitchers());
+        writeNumBattersLast(readNumBatters());
+        writeNumCatchersLast(readNumCatchers());
+        resetPitchers();
+        resetBatters();
+        resetCatchers();
+    }
+
     public boolean isExploreDirFlag(int flag) {
         return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }

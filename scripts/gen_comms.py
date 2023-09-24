@@ -47,6 +47,17 @@ SCHEMA = {
         ],
         'is_loc': True,
     },
+    'num': {
+        'slots': 1,
+        'fields': [
+            'pitchers',
+            'pitchers_last',
+            'batters',
+            'batters_last',
+            'catchers',
+            'catchers_last',
+        ]
+    }
 }
 
 def capitalize(s):
@@ -74,6 +85,16 @@ def gen():
 
     public void write{capitalize(datatype)}{capitalize(field)}(int value) {{
         uc.write({fields_so_far}, value);
+    }}
+"""
+                if datatype == 'num' and not field.endswith('_last'):
+                    out += f"""
+    public void increment{capitalize(field)}() {{
+        write{capitalize(datatype)}{capitalize(field)}(read{capitalize(datatype)}{capitalize(field)}() + 1);
+    }}
+
+    public void reset{capitalize(field)}() {{
+        write{capitalize(datatype)}{capitalize(field)}(0);
     }}
 """
             else:

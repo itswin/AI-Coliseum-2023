@@ -8,6 +8,10 @@ public class Hq extends Robot {
     public Direction[] exploreDirections;
     public int exploreDirIndex;
 
+    public int numPitchers;
+    public int numBatters;
+    public int numCatchers;
+
     public Hq(UnitController u) {
         super(u);
         comms.init();
@@ -17,16 +21,29 @@ public class Hq extends Robot {
         exploreDirIndex = 0;
     }
 
+    public void initTurn() {
+        super.initTurn();
+
+        numPitchers = comms.readNumPitchers();
+        numBatters = comms.readNumBatters();
+        numCatchers = comms.readNumCatchers();
+        comms.resetUnitCount();
+    }
+
     public void takeTurn() {
         super.takeTurn();
 
-        int randomNumberDir = util.randomInt(8);
-        Direction dir = Direction.values()[randomNumberDir];
+        Direction dir = exploreDirections[exploreDirIndex++ % exploreDirections.length];
+        UnitType recruitType;
+        if (numPitchers < 2 * numBatters + 5) {
+            recruitType = UnitType.PITCHER;
+        } else {
+            recruitType = UnitType.BATTER;
+        }
 
-        /* If this unit is a HQ, try to recruit a pitcher following direction dir */
-        if (uc.canRecruitUnit(UnitType.PITCHER, dir)) {
-            uc.recruitUnit(UnitType.PITCHER, dir);
-            nextFlag = util.dirToFlag(exploreDirections[exploreDirIndex++ % exploreDirections.length]);
+        if (uc.canRecruitUnit(recruitType, dir)) {
+            uc.recruitUnit(recruitType, dir);
+            nextFlag = util.dirToFlag(dir);
         }
 
         comms.writeHqFlag(nextFlag);

@@ -26,6 +26,7 @@ public class Comms {
     public final int SYMMETRY_SLOTS = 1;
     public final int BASE_SLOTS = 16;
     public final int STADIUM_SLOTS = 16;
+    public final int NUM_SLOTS = 1;
 
     public Comms(UnitController u, Robot robot) {
         uc = u;
@@ -61,6 +62,15 @@ public class Comms {
         writeSymmetryVertical(1);
         writeSymmetryHorizontal(1);
         writeSymmetryRotational(1);
+    }
+
+    public void resetUnitCount() {
+        writeNumPitchersLast(readNumPitchers());
+        writeNumBattersLast(readNumBatters());
+        writeNumCatchersLast(readNumCatchers());
+        resetPitchers();
+        resetBatters();
+        resetCatchers();
     }
 
     public boolean isExploreDirFlag(int flag) {
@@ -254,6 +264,78 @@ public class Comms {
                 return;
             }
         }
+    }
+
+    public int readNumPitchers() {
+        return uc.read(76);
+    }
+
+    public void writeNumPitchers(int value) {
+        uc.write(76, value);
+    }
+
+    public void incrementPitchers() {
+        writeNumPitchers(readNumPitchers() + 1);
+    }
+
+    public void resetPitchers() {
+        writeNumPitchers(0);
+    }
+
+    public int readNumPitchersLast() {
+        return uc.read(77);
+    }
+
+    public void writeNumPitchersLast(int value) {
+        uc.write(77, value);
+    }
+
+    public int readNumBatters() {
+        return uc.read(78);
+    }
+
+    public void writeNumBatters(int value) {
+        uc.write(78, value);
+    }
+
+    public void incrementBatters() {
+        writeNumBatters(readNumBatters() + 1);
+    }
+
+    public void resetBatters() {
+        writeNumBatters(0);
+    }
+
+    public int readNumBattersLast() {
+        return uc.read(79);
+    }
+
+    public void writeNumBattersLast(int value) {
+        uc.write(79, value);
+    }
+
+    public int readNumCatchers() {
+        return uc.read(80);
+    }
+
+    public void writeNumCatchers(int value) {
+        uc.write(80, value);
+    }
+
+    public void incrementCatchers() {
+        writeNumCatchers(readNumCatchers() + 1);
+    }
+
+    public void resetCatchers() {
+        writeNumCatchers(0);
+    }
+
+    public int readNumCatchersLast() {
+        return uc.read(81);
+    }
+
+    public void writeNumCatchersLast(int value) {
+        uc.write(81, value);
     }
 
 }
