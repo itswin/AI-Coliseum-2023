@@ -62,3 +62,13 @@ if __name__ == '__main__':
             # Write the file out again
             with open(file_path, 'w') as new_file:
                 new_file.write(filedata)
+
+    with open('build.defaults', 'r') as file:
+        with open('build_defaults.tmp', 'w') as file2:
+            for line in file:
+                if 'package2' in line:
+                    file2.write(f"package2={snapshot_name}\n")
+                else:
+                    file2.write(line)
+
+    os.rename('build_defaults.tmp', 'build.defaults')
