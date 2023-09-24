@@ -22,13 +22,13 @@ public class MapTracker {
         public int OUT_OF_BOUNDS = 7;
     }
 
-    TileTypeEnum TileType = new TileTypeEnum();
+    final TileTypeEnum TileType = new TileTypeEnum();
 
     final int MAX_MAP_SIZE = 60;
     final int MAX_MAP_SIZE_SQ = MAX_MAP_SIZE * MAX_MAP_SIZE;
     final int MAX_MAP_SIZE2 = 2 * MAX_MAP_SIZE;
 
-    int[][] tileType = new int[MAX_MAP_SIZE2][];
+    int[][] tileType = new int[MAX_MAP_SIZE2 + 1][];
 
     int visionRadius;
     boolean initialized;
@@ -105,10 +105,10 @@ public class MapTracker {
         if (initialized)
             return;
 
-        while (initRow < MAX_MAP_SIZE2) {
+        while (initRow < tileType.length) {
             if (uc.getEnergyLeft() < INIT_BC_LEFT)
                 return;
-            tileType[initRow] = new int[MAX_MAP_SIZE2];
+            tileType[initRow] = new int[MAX_MAP_SIZE2 + 1];
             initRow++;
         }
         initialized = true;

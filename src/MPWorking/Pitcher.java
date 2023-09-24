@@ -3,28 +3,20 @@ package MPWorking;
 import aic2023.user.*;
 
 public class Pitcher extends Robot {
+
     public Pitcher(UnitController u) {
         super(u);
     }
 
     public void takeTurn() {
-        /* Get random direction */
-        int randomNumberDir = (int) (Math.random() * 8);
-        Direction dir = Direction.values()[randomNumberDir];
+        super.takeTurn();
 
-        Location target = getTarget(uc);
-        if (target != null) {
-            /* Try to get closer to the target */
-            Direction targetDir = uc.getLocation().directionTo(target);
-            if (uc.canMove(targetDir))
-                uc.move(targetDir);
-            /* Otherwise move random */
-            else if (uc.canMove(dir))
-                uc.move(dir);
+        Location target = explore.getExplore3Target();
+        if (target == null) {
+            target = getTarget(uc);
         }
-        /* If there is no target, also move random */
-        else if (uc.canMove(dir))
-            uc.move(dir);
+
+        nav.move(target);
     }
 
     /**

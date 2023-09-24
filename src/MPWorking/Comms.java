@@ -7,6 +7,20 @@ public class Comms {
     private UnitController uc;
     private Robot r;
 
+    final public class HqFlagsEnum {
+        public int UNKNOWN_FLAG = 0;
+        public int EXPLORE_NORTH = 1;
+        public int EXPLORE_EAST = 2;
+        public int EXPLORE_SOUTH = 3;
+        public int EXPLORE_WEST = 4;
+        public int EXPLORE_NORTHEAST = 5;
+        public int EXPLORE_SOUTHEAST = 6;
+        public int EXPLORE_SOUTHWEST = 7;
+        public int EXPLORE_NORTHWEST = 8;
+    }
+
+    final HqFlagsEnum HqFlags = new HqFlagsEnum();
+
     public final int MAP_SLOTS = 1;
     public final int HQ_SLOTS = 1;
     public final int SYMMETRY_SLOTS = 1;
@@ -38,6 +52,10 @@ public class Comms {
         writeSymmetryVertical(1);
         writeSymmetryHorizontal(1);
         writeSymmetryRotational(1);
+    }
+
+    public boolean isExploreDirFlag(int flag) {
+        return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }
 
     public int readMapXMin() {

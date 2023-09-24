@@ -230,6 +230,12 @@ public class Util {
         return Math.min(Math.max(n, lo), hi);
     }
 
+    Location clipToHqBoundedLoc(Location loc) {
+        return new Location(
+                clip(loc.x, robot.hq.x - GameConstants.MAX_MAP_SIZE, robot.hq.x + GameConstants.MAX_MAP_SIZE),
+                clip(loc.y, robot.hq.y - GameConstants.MAX_MAP_SIZE, robot.hq.y + GameConstants.MAX_MAP_SIZE));
+    }
+
     public void updateMapBounds(Location loc) {
         int xMin = robot.comms.readMapXMin();
         int xMax = robot.comms.readMapXMax();
@@ -337,5 +343,49 @@ public class Util {
                 return true;
         }
         return false;
+    }
+
+    public int dirToFlag(Direction dir) {
+        if (dir == Direction.NORTH) {
+            return robot.comms.HqFlags.EXPLORE_NORTH;
+        } else if (dir == Direction.EAST) {
+            return robot.comms.HqFlags.EXPLORE_EAST;
+        } else if (dir == Direction.SOUTH) {
+            return robot.comms.HqFlags.EXPLORE_SOUTH;
+        } else if (dir == Direction.WEST) {
+            return robot.comms.HqFlags.EXPLORE_WEST;
+        } else if (dir == Direction.NORTHWEST) {
+            return robot.comms.HqFlags.EXPLORE_NORTHWEST;
+        } else if (dir == Direction.NORTHEAST) {
+            return robot.comms.HqFlags.EXPLORE_NORTHEAST;
+        } else if (dir == Direction.SOUTHEAST) {
+            return robot.comms.HqFlags.EXPLORE_SOUTHEAST;
+        } else if (dir == Direction.SOUTHWEST) {
+            return robot.comms.HqFlags.EXPLORE_SOUTHWEST;
+        } else {
+            return robot.comms.HqFlags.UNKNOWN_FLAG;
+        }
+    }
+
+    public Direction flagToDir(int flag) {
+        if (flag == robot.comms.HqFlags.EXPLORE_NORTH) {
+            return Direction.NORTH;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_EAST) {
+            return Direction.EAST;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_SOUTH) {
+            return Direction.SOUTH;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_WEST) {
+            return Direction.WEST;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_NORTHWEST) {
+            return Direction.NORTHWEST;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_NORTHEAST) {
+            return Direction.NORTHEAST;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_SOUTHEAST) {
+            return Direction.SOUTHEAST;
+        } else if (flag == robot.comms.HqFlags.EXPLORE_SOUTHWEST) {
+            return Direction.SOUTHWEST;
+        } else {
+            return Direction.ZERO;
+        }
     }
 }

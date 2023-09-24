@@ -14,6 +14,8 @@ public class Robot {
     public MapTracker mapTracker;
     public Explore explore;
     public Comms comms;
+    public Pathfinding pathfinding;
+    public Nav nav;
 
     public Robot(UnitController u) {
         uc = u;
@@ -37,13 +39,22 @@ public class Robot {
 
         fastMath = new FastMath(u);
         debug = new Debug(u, this);
+        comms = new Comms(u, this);
         util = new Util(u, this);
         mapTracker = new MapTracker(u, this);
         explore = new Explore(u, this);
-        comms = new Comms(u, this);
+        pathfinding = new Pathfinding(u, this);
+        nav = new Nav(u, this);
+
+        int hqFlag = comms.readHqFlag();
+        debug.println("HQ flag: " + hqFlag);
+        if (comms.isExploreDirFlag(hqFlag)) {
+            explore.assignExplore3Dir(util.flagToDir(hqFlag));
+        }
     }
 
     public void initTurn() {
+        pathfinding.initTurn();
     }
 
     public void takeTurn() {

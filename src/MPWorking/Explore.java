@@ -26,16 +26,15 @@ public class Explore {
         uc = u;
         robot = r;
         visionRadius = (int) uc.getType().getStat(UnitStat.VISION_RANGE);
-        Math.random(); // for some reason the first entry is buggy...
         initExploreDir();
     }
 
     // Don't continue in this explore dir if it will bring you too close to a wall.
     public boolean isValidExploreDir(Direction dir) {
         if (robot.util.isCardinalDirection(dir)) {
-            return robot.util.onTheMap(uc.getLocation().add(dir.dx * 5, dir.dy * 5));
-        } else if (robot.util.isDiagonalDirection(dir)) {
             return robot.util.onTheMap(uc.getLocation().add(dir.dx * 4, dir.dy * 4));
+        } else if (robot.util.isDiagonalDirection(dir)) {
+            return robot.util.onTheMap(uc.getLocation().add(dir.dx * 3, dir.dy * 3));
         }
 
         // Should not happen
@@ -90,13 +89,15 @@ public class Explore {
             x += Math.cos(angle) * EXPLORE_DIST;
             y += Math.sin(angle) * EXPLORE_DIST;
             explore3Target = new Location((int) x, (int) y);
-            if (!robot.mapTracker.hasVisited(explore3Target))
+            explore3Target = robot.util.clipToHqBoundedLoc(explore3Target);
+            if (!robot.mapTracker.hasVisited(explore3Target) && robot.util.onTheMap(explore3Target))
                 return;
         }
+        robot.debug.println("ERROR: Could not find a new explore3 target!");
     }
 
     void checkDirection() {
-        if (isValidExploreDir(exploreDir)) {
+        if (isValidExploreDir(exploreDir) && robot.util.onTheMap(explore3Target)) {
             if (explore3Target.distanceSquared(uc.getLocation()) <= visionRadius) {
                 assignExplore3Dir(exploreDir);
             }
@@ -191,5 +192,18 @@ public class Explore {
                 return;
             }
         }
+    }
+
+    Direction[] getOptimalExploreOrder() {
+        return new Direction[] {
+                Direction.NORTH,
+                Direction.SOUTHWEST,
+                Direction.SOUTHEAST,
+                Direction.NORTHWEST,
+                Direction.EAST,
+                Direction.WEST,
+                Direction.NORTHEAST,
+                Direction.SOUTH,
+        };
     }
 }
