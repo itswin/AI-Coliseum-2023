@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Credit to https://github.com/jmerle
+
 import requests
 from pathlib import Path
 
