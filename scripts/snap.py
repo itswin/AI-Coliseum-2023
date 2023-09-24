@@ -4,6 +4,7 @@
 import sys
 import shutil, errno
 import os
+from pathlib import Path
 
 def copyanything(src, dst):
     try:
@@ -19,8 +20,7 @@ def usage():
 if __name__ == '__main__':
     num_args = len(sys.argv)
 
-    script_path = os.path.dirname(os.path.realpath(__file__))
-    main_dir, script_dir = os.path.split(script_path)
+    main_dir = Path(__file__).parent.parent
 
     if num_args != 2:
         usage()
@@ -33,11 +33,11 @@ if __name__ == '__main__':
         print("Package name must start with MP")
         quit()
 
-    working_name = "MPWorking"
-    src_dir = main_dir + "/src"
+    working_name = "demoplayer"
+    src_dir = main_dir / "src"
 
-    working_src = src_dir + "/" + working_name
-    snapshot_dst = src_dir + "/" + snapshot_name
+    working_src = src_dir / working_name
+    snapshot_dst = src_dir / snapshot_name
 
     debug_verbose_on = "static final boolean VERBOSE = true;"
     debug_verbose_off = "static final boolean VERBOSE = false;"
