@@ -24,6 +24,8 @@ public class Comms {
     public final int MAP_SLOTS = 1;
     public final int HQ_SLOTS = 1;
     public final int SYMMETRY_SLOTS = 1;
+    public final int BASE_SLOTS = 16;
+    public final int STADIUM_SLOTS = 16;
 
     public Comms(UnitController u, Robot robot) {
         uc = u;
@@ -32,6 +34,13 @@ public class Comms {
 
     public Location readHqLocation() {
         return new Location(readHqXCoord(), readHqYCoord());
+    }
+
+    public void init() {
+        initMap();
+        initSymmetry();
+            initBase();
+            initStadium();
     }
 
     public void initMap() {
@@ -57,6 +66,19 @@ public class Comms {
     public boolean isExploreDirFlag(int flag) {
         return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }
+
+    public void initBase() {
+        for (int i = BASE_SLOTS; --i >= 0;) {
+            writeBase(i, new Location(-1, -1));
+        }
+    }
+
+    public void initStadium() {
+        for (int i = STADIUM_SLOTS; --i >= 0;) {
+            writeStadium(i, new Location(-1, -1));
+        }
+    }
+
 
     public int readMapXMin() {
         return uc.read(0);
@@ -152,6 +174,86 @@ public class Comms {
 
     public void writeSymmetryRotational(int value) {
         uc.write(11, value);
+    }
+
+    public int readBaseX(int slot) {
+        return uc.read(12 + slot * 2);
+    }
+
+    public void writeBaseX(int slot, int value) {
+        uc.write(12 + slot * 2, value);
+    }
+
+    public int readBaseY(int slot) {
+        return uc.read(28 + slot * 2);
+    }
+
+    public void writeBaseY(int slot, int value) {
+        uc.write(28 + slot * 2, value);
+    }
+
+    public Location readBase(int slot) {
+        return new Location(readBaseX(slot), readBaseY(slot));
+    }
+
+    public void writeBase(int slot, Location loc) {
+        writeBaseX(slot, loc.x);
+        writeBaseY(slot, loc.y);
+    }
+
+    public void logBase(Location loc) {
+        int slot = -1;
+        Location slotLoc;
+        for (; ++slot < BASE_SLOTS;) {
+            slotLoc = readBase(slot);
+            if (slotLoc.x == -1) {
+                writeBase(slot, loc);
+                uc.println("Logging base at " + loc + " in slot " + slot);
+                return;
+            } else if (slotLoc.equals(loc)) {
+                return;
+            }
+        }
+    }
+
+    public int readStadiumX(int slot) {
+        return uc.read(44 + slot * 2);
+    }
+
+    public void writeStadiumX(int slot, int value) {
+        uc.write(44 + slot * 2, value);
+    }
+
+    public int readStadiumY(int slot) {
+        return uc.read(60 + slot * 2);
+    }
+
+    public void writeStadiumY(int slot, int value) {
+        uc.write(60 + slot * 2, value);
+    }
+
+    public Location readStadium(int slot) {
+        return new Location(readStadiumX(slot), readStadiumY(slot));
+    }
+
+    public void writeStadium(int slot, Location loc) {
+        writeStadiumX(slot, loc.x);
+        writeStadiumY(slot, loc.y);
+    }
+
+    public void logStadium(Location loc) {
+        int slot = -1;
+        Location slotLoc;
+        for (; ++slot < STADIUM_SLOTS;) {
+            slotLoc = readStadium(slot);
+            if (slotLoc.x == -1) {
+                writeStadium(slot, loc);
+                uc.println("Logging stadium at " + loc + " in slot " + slot);
+                return;
+            } else if (slotLoc.equals(loc)) {
+                return;
+            }
+        }
     }
 
 }

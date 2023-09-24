@@ -31,6 +31,12 @@ public class Comms {
         return new Location(readHqXCoord(), readHqYCoord());
     }
 
+    public void init() {
+        initMap();
+        initSymmetry();
+        // INIT METHOD CALLS
+    }
+
     public void initMap() {
         writeMapWidth(-1);
         writeMapHeight(-1);
@@ -54,6 +60,8 @@ public class Comms {
     public boolean isExploreDirFlag(int flag) {
         return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }
+    // INIT LOC METHODS
+
     // MAIN READ AND WRITE METHODS
 
 }

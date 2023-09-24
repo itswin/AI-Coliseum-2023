@@ -93,7 +93,7 @@ public class Explore {
             if (!robot.mapTracker.hasVisited(explore3Target) && robot.util.onTheMap(explore3Target))
                 return;
         }
-        robot.debug.println("ERROR: Could not find a new explore3 target!");
+        // robot.debug.println("ERROR: Could not find a new explore3 target!");
     }
 
     void checkDirection() {

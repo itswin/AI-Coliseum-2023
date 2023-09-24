@@ -31,6 +31,22 @@ SCHEMA = {
             'rotational',
         ]
     },
+    'base': {
+        'slots': 16,
+        'fields': [
+            'x',
+            'y',
+        ],
+        'is_loc': True,
+    },
+    'stadium': {
+        'slots': 16,
+        'fields': [
+            'x',
+            'y',
+        ],
+        'is_loc': True,
+    },
 }
 
 def capitalize(s):
@@ -70,11 +86,60 @@ def gen():
         uc.write({fields_so_far} + slot * {len(SCHEMA[datatype]['fields'])}, value);
     }}
 """
-            fields_so_far += 1
+            fields_so_far += SCHEMA[datatype]['slots']
+        if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
+            out += f"""
+    public Location read{capitalize(datatype)}(int slot) {{
+        return new Location(read{capitalize(datatype)}X(slot), read{capitalize(datatype)}Y(slot));
+    }}
+
+    public void write{capitalize(datatype)}(int slot, Location loc) {{
+        write{capitalize(datatype)}X(slot, loc.x);
+        write{capitalize(datatype)}Y(slot, loc.y);
+    }}
+
+    public void log{capitalize(datatype)}(Location loc) {{
+        int slot = -1;
+        Location slotLoc;
+        for (; ++slot < {datatype.upper()}_SLOTS;) {{
+            slotLoc = read{capitalize(datatype)}(slot);
+            if (slotLoc.x == -1) {{
+                write{capitalize(datatype)}(slot, loc);
+                uc.println("Logging {datatype} at " + loc + " in slot " + slot);
+                return;
+            }} else if (slotLoc.equals(loc)) {{
+                return;
+            }}
+        }}
+    }}
+"""
 
     print(f"Total fields used: {fields_so_far}")
     if fields_so_far > 1000000:
         raise Exception("Too many fields")
+    return out
+
+
+def gen_init_loc_methods():
+    out = """"""
+    for datatype in SCHEMA:
+        if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
+            out += f"""
+    public void init{capitalize(datatype)}() {{
+        for (int i = {datatype.upper()}_SLOTS; --i >= 0;) {{
+            write{capitalize(datatype)}(i, new Location(-1, -1));
+        }}
+    }}
+"""
+    return out
+
+
+def gen_init_method_calls():
+    out = """"""
+    for datatype in SCHEMA:
+        if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
+            out += f"""            init{capitalize(datatype)}();
+"""
     return out
 
 
@@ -93,9 +158,9 @@ if __name__ == '__main__':
                     f.write(gen())
                 elif '// CONSTS' in line:
                     f.write(gen_constants())
-                # elif '// PRIORITY SECTOR INIT' in line:
-                #     f.write(gen_init_sectors())
-                # elif '// SECTOR CONTROL STATUS RESET' in line:
-                #     f.write(gen_sector_control_status_reset())
+                elif '// INIT LOC METHODS' in line:
+                    f.write(gen_init_loc_methods())
+                elif '// INIT METHOD CALLS' in line:
+                    f.write(gen_init_method_calls())
                 else:
                     f.write(line)

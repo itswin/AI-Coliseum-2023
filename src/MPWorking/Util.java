@@ -7,6 +7,8 @@ public class Util {
     private Robot robot;
     private Location hq;
 
+    final int FORCE_EXPLORE_ROUNDS = 100;
+
     /** Array containing all the possible movement directions. */
     final Direction[] directions = {
             Direction.NORTH,
@@ -387,5 +389,54 @@ public class Util {
         } else {
             return Direction.ZERO;
         }
+    }
+
+    public Location getClosestLocation(Location[] locs) {
+        int idx;
+        Location loc = null;
+        Location currLoc = uc.getLocation();
+        int bestDist = Integer.MAX_VALUE;
+        Location bestLoc = null;
+        int dist;
+        for (idx = locs.length; --idx >= 0;) {
+            loc = locs[idx];
+            dist = currLoc.distanceSquared(loc);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestLoc = loc;
+            }
+        }
+        return bestLoc;
+    }
+
+    /**
+     * Returns the closest location of the array that does not have one of our
+     * pitchers on top.
+     * We should also look at the IDs to make sure it is not this unit the one
+     * that's standing on top.
+     */
+    Location getClosestAvailable(Location[] locs) {
+        int idx;
+        Location loc = null;
+        Location currLoc = uc.getLocation();
+        int bestDist = Integer.MAX_VALUE;
+        Location bestLoc = null;
+        int dist;
+        UnitInfo unit;
+        for (idx = locs.length; --idx >= 0;) {
+            loc = locs[idx];
+            dist = currLoc.distanceSquared(loc);
+            unit = uc.senseUnitAtLocation(loc);
+            if (unit == null ||
+                    unit.getTeam() != uc.getTeam() ||
+                    uc.getType() != UnitType.PITCHER ||
+                    unit.getID() == uc.getInfo().getID()) {
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestLoc = loc;
+                }
+            }
+        }
+        return bestLoc;
     }
 }

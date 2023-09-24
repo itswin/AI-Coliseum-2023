@@ -17,6 +17,13 @@ public class Robot {
     public Pathfinding pathfinding;
     public Nav nav;
 
+    public float REP_COST;
+    public float VISION_RANGE;
+    public float ACTION_RANGE;
+    public float MOVEMENT_RANGE;
+    public float ACTION_COOLDOWN;
+    public float MOVEMENT_COOLDOWN;
+
     public Robot(UnitController u) {
         uc = u;
 
@@ -51,6 +58,13 @@ public class Robot {
         if (comms.isExploreDirFlag(hqFlag)) {
             explore.assignExplore3Dir(util.flagToDir(hqFlag));
         }
+
+        REP_COST = uc.getType().getStat(UnitStat.REP_COST);
+        VISION_RANGE = uc.getType().getStat(UnitStat.VISION_RANGE);
+        ACTION_RANGE = uc.getType().getStat(UnitStat.ACTION_RANGE);
+        MOVEMENT_RANGE = uc.getType().getStat(UnitStat.MOVEMENT_RANGE);
+        ACTION_COOLDOWN = uc.getType().getStat(UnitStat.ACTION_COOLDOWN);
+        MOVEMENT_COOLDOWN = uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN);
     }
 
     public void initTurn() {

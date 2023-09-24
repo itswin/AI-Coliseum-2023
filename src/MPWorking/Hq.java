@@ -8,12 +8,9 @@ public class Hq extends Robot {
     public Direction[] exploreDirections;
     public int exploreDirIndex;
 
-    public int numPitchers = 0;
-
     public Hq(UnitController u) {
         super(u);
-        comms.initMap();
-        comms.initSymmetry();
+        comms.init();
 
         nextFlag = 0;
         exploreDirections = explore.getOptimalExploreOrder();
@@ -27,7 +24,7 @@ public class Hq extends Robot {
         Direction dir = Direction.values()[randomNumberDir];
 
         /* If this unit is a HQ, try to recruit a pitcher following direction dir */
-        if (uc.canRecruitUnit(UnitType.PITCHER, dir) && ++numPitchers <= 1) {
+        if (uc.canRecruitUnit(UnitType.PITCHER, dir)) {
             uc.recruitUnit(UnitType.PITCHER, dir);
             nextFlag = util.dirToFlag(exploreDirections[exploreDirIndex++ % exploreDirections.length]);
         }
