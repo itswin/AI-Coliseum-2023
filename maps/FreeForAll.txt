@@ -1,0 +1,12 @@
+AIC2023
+FreeForAll
+49 49
+976 325
+rotational
+3
+S 10 24
+S 38 24
+B 24 24
+1
+1 1
+47 47
