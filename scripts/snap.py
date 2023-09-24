@@ -33,7 +33,7 @@ if __name__ == '__main__':
         print("Package name must start with MP")
         quit()
 
-    working_name = "demoplayer"
+    working_name = "MPWorking"
     src_dir = main_dir / "src"
 
     working_src = src_dir / working_name
