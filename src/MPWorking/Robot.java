@@ -27,6 +27,23 @@ public class Robot {
     public float ACTION_COOLDOWN;
     public float MOVEMENT_COOLDOWN;
 
+    public int commsBaseIndex;
+    public int commsStadiumIndex;
+
+    final class TargetTypeEnum {
+        public final int BASE = 0;
+        public final int STADIUM = 1;
+        public final int ENEMY_HQ = 2;
+        public final int EXPLORE = 3;
+    }
+
+    public TargetTypeEnum TargetType = new TargetTypeEnum();
+
+    public int targetType;
+    public Location target;
+    public boolean justStartedExploring;
+    public int enemyHqIndex;
+
     public Robot(UnitController u) {
         uc = u;
 
@@ -57,7 +74,6 @@ public class Robot {
         nav = new Nav(u, this);
 
         int hqFlag = comms.readHqFlag();
-        debug.println("HQ flag: " + hqFlag);
         if (comms.isExploreDirFlag(hqFlag)) {
             explore.assignExplore3Dir(util.flagToDir(hqFlag));
         }
@@ -68,10 +84,22 @@ public class Robot {
         MOVEMENT_RANGE = uc.getType().getStat(UnitStat.MOVEMENT_RANGE);
         ACTION_COOLDOWN = uc.getType().getStat(UnitStat.ACTION_COOLDOWN);
         MOVEMENT_COOLDOWN = uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN);
+
+        targetType = TargetType.BASE;
+        commsBaseIndex = 0;
+        commsStadiumIndex = 0;
+        targetType = TargetType.BASE;
+        target = null;
+        justStartedExploring = false;
+        enemyHqIndex = 0;
     }
 
     public void initTurn() {
         pathfinding.initTurn();
+
+        if (shouldLoadNextTarget()) {
+            loadNextTarget();
+        }
     }
 
     public void takeTurn() {
@@ -84,5 +112,71 @@ public class Robot {
 
     public Location getClosestMapObj(MapObject mapObj, Predicate<Location> pred) {
         return util.getClosestLoc(uc.senseObjects(mapObj, VISION_RANGE), pred);
+    }
+
+    public void rotateTargetType() {
+        if (targetType == TargetType.BASE) {
+            targetType = TargetType.STADIUM;
+            commsStadiumIndex = 0;
+        } else if (targetType == TargetType.STADIUM) {
+            targetType = TargetType.ENEMY_HQ;
+            enemyHqIndex = 0;
+        } else if (targetType == TargetType.ENEMY_HQ) {
+            targetType = TargetType.EXPLORE;
+            justStartedExploring = true;
+        } else if (targetType == TargetType.EXPLORE) {
+            targetType = TargetType.BASE;
+            commsBaseIndex = 0;
+        }
+    }
+
+    public boolean shouldLoadNextTarget() {
+        // Always load next target if exploring
+        return target == null ||
+                uc.getLocation().distanceSquared(target) <= VISION_RANGE ||
+                targetType == TargetType.EXPLORE;
+    }
+
+    public void loadNextTarget() {
+        if (targetType == TargetType.BASE) {
+            if (commsBaseIndex >= comms.BASE_SLOTS ||
+                    (target = comms.readBase(commsBaseIndex++)).x == -1) {
+                rotateTargetType();
+                loadNextTarget();
+            }
+        } else if (targetType == TargetType.STADIUM) {
+            if (commsStadiumIndex >= comms.STADIUM_SLOTS ||
+                    (target = comms.readStadium(commsStadiumIndex++)).x == -1) {
+                rotateTargetType();
+                loadNextTarget();
+            }
+        } else if (targetType == TargetType.ENEMY_HQ) {
+            if (!util.mapBoundsInitialized) {
+                rotateTargetType();
+                loadNextTarget();
+            } else {
+                Location[] enemyHqLocations = util.getValidSymmetryLocs(hq);
+                if (enemyHqIndex >= enemyHqLocations.length) {
+                    rotateTargetType();
+                    loadNextTarget();
+                } else {
+                    target = enemyHqLocations[enemyHqIndex++];
+                }
+            }
+        } else if (targetType == TargetType.EXPLORE) {
+            if (justStartedExploring) {
+                target = explore.getExplore3Target();
+                justStartedExploring = false;
+            } else {
+                Location newTarget = explore.getExplore3Target();
+                // If we reset the explore target, rotate target types
+                if (!target.equals(newTarget)) {
+                    rotateTargetType();
+                    loadNextTarget();
+                } else {
+                    target = newTarget;
+                }
+            }
+        }
     }
 }

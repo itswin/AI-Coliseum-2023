@@ -126,7 +126,7 @@ def gen():
             slotLoc = read{capitalize(datatype)}(slot);
             if (slotLoc.x == -1) {{
                 write{capitalize(datatype)}(slot, loc);
-                uc.println("Logging {datatype} at " + loc + " in slot " + slot);
+                robot.debug.println("Logging {datatype} at " + loc + " in slot " + slot);
                 return;
             }} else if (slotLoc.equals(loc)) {{
                 return;

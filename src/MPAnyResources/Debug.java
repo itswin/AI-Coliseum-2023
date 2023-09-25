@@ -3,7 +3,7 @@ package MPAnyResources;
 import aic2023.user.*;
 
 public class Debug {
-    final boolean VERBOSE = true;
+    final boolean VERBOSE = false;
     public final boolean INFO = true;
     public final boolean PATHFINDING = false;
     public final boolean INDICATORS = true;

@@ -11,6 +11,8 @@ public class Util {
 
     final int FORCE_EXPLORE_ROUNDS = 100;
 
+    public boolean mapBoundsInitialized;
+
     /** Array containing all the possible movement directions. */
     final Direction[] directions = {
             Direction.NORTH,
@@ -55,6 +57,7 @@ public class Util {
         uc = u;
         robot = r;
         hq = r.hq;
+        mapBoundsInitialized = false;
     }
 
     int distance(Location A, Location B) {
@@ -105,18 +108,27 @@ public class Util {
         return new Location(mapXMax - (loc.x - mapXMin), mapYMax - (loc.y - mapYMin));
     }
 
-    Location[] getValidSymmetryLocs(Location hqLoc, boolean v, boolean h, boolean r) {
-        int mapHeight = robot.comms.readMapWidth();
-        int mapWidth = robot.comms.readMapHeight();
+    Location[] getValidSymmetryLocs(Location loc) {
+        return getValidSymmetryLocs(loc,
+                robot.comms.readSymmetryVertical() == 1,
+                robot.comms.readSymmetryHorizontal() == 1,
+                robot.comms.readSymmetryRotational() == 1);
+    }
+
+    Location[] getValidSymmetryLocs(Location loc, boolean v, boolean h, boolean r) {
+        int mapXMin = robot.comms.readMapXMin();
+        int mapXMax = robot.comms.readMapXMax();
+        int mapYMin = robot.comms.readMapYMin();
+        int mapYMax = robot.comms.readMapYMax();
 
         // Don't know map dimensions yet.
-        if (mapWidth == -1 || mapHeight == -1) {
-            return new Location[] {};
+        if (mapXMin == -1 || mapXMax == -1 || mapYMin == -1 || mapYMax == -1) {
+            return null;
         }
 
-        Location verticalFlip = new Location(hqLoc.x, mapHeight - hqLoc.y - 1);
-        Location horizontalFlip = new Location(mapWidth - hqLoc.x - 1, hqLoc.y);
-        Location rotation = new Location(mapWidth - hqLoc.x - 1, mapHeight - hqLoc.y - 1);
+        Location verticalFlip = new Location(loc.x, mapYMax - (loc.y - mapYMin));
+        Location horizontalFlip = new Location(mapXMax - (loc.x - mapXMin), loc.y);
+        Location rotation = new Location(mapXMax - (loc.x - mapXMin), mapYMax - (loc.y - mapYMin));
         if (v) {
             if (h) {
                 if (r) {
@@ -241,11 +253,15 @@ public class Util {
     }
 
     public void updateMapBounds(Location loc) {
+        if (mapBoundsInitialized)
+            return;
+
         int xMin = robot.comms.readMapXMin();
         int xMax = robot.comms.readMapXMax();
         int yMin = robot.comms.readMapYMin();
         int yMax = robot.comms.readMapYMax();
         if (xMin != -1 && xMax != -1 && yMin != -1 && yMax != -1) {
+            mapBoundsInitialized = true;
             return;
         }
 
@@ -253,21 +269,33 @@ public class Util {
         if (uc.canSenseLocation(newLoc) && yMin == -1) {
             robot.comms.writeMapYMin(newLoc.y);
             robot.debug.println("YMin: " + newLoc.y);
+            if (yMax != -1) {
+                robot.comms.writeMapHeight(yMax - newLoc.y + 1);
+            }
         }
         newLoc = loc.add(Direction.SOUTH);
         if (uc.canSenseLocation(newLoc) && yMax == -1) {
             robot.comms.writeMapYMax(newLoc.y);
             robot.debug.println("YMax: " + newLoc.y);
+            if ((yMin = robot.comms.readMapYMin()) != -1) {
+                robot.comms.writeMapHeight(newLoc.y - yMin + 1);
+            }
         }
         newLoc = loc.add(Direction.EAST);
         if (uc.canSenseLocation(newLoc) && xMin == -1) {
             robot.comms.writeMapXMin(newLoc.x);
             robot.debug.println("XMin: " + newLoc.x);
+            if (xMax != -1) {
+                robot.comms.writeMapWidth(xMax - newLoc.x + 1);
+            }
         }
         newLoc = loc.add(Direction.WEST);
         if (uc.canSenseLocation(newLoc) && xMax == -1) {
             robot.comms.writeMapXMax(newLoc.x);
             robot.debug.println("XMax: " + newLoc.x);
+            if ((xMin = robot.comms.readMapXMin()) != -1) {
+                robot.comms.writeMapWidth(newLoc.x - xMin + 1);
+            }
         }
     }
 
@@ -411,12 +439,6 @@ public class Util {
         return bestLoc;
     }
 
-    /**
-     * Returns the closest location of the array that does not have one of our
-     * pitchers on top.
-     * We should also look at the IDs to make sure it is not this unit the one
-     * that's standing on top.
-     */
     Location getClosestLoc(Location[] locs, Predicate<Location> pred) {
         int idx;
         Location loc = null;
@@ -424,11 +446,9 @@ public class Util {
         int bestDist = Integer.MAX_VALUE;
         Location bestLoc = null;
         int dist;
-        UnitInfo unit;
         for (idx = locs.length; --idx >= 0;) {
             loc = locs[idx];
             dist = currLoc.distanceSquared(loc);
-            unit = uc.senseUnitAtLocation(loc);
             if (pred.test(loc)) {
                 if (dist < bestDist) {
                     bestDist = dist;

@@ -83,6 +83,7 @@ public class Explore {
         double tempAngle = Math.atan2(exploreDir.dy, exploreDir.dx);
         int tries = 10;
         double x = uc.getLocation().x, y = uc.getLocation().y;
+        Location currLoc = uc.getLocation();
         for (int i = tries; i-- > 0;) {
             // Try for more variance in the direction?
             double angle = tempAngle + (uc.getRandomDouble() * 45 - 22.5) / 180 * Math.PI;
@@ -90,13 +91,25 @@ public class Explore {
             y += Math.sin(angle) * EXPLORE_DIST;
             explore3Target = new Location((int) x, (int) y);
             explore3Target = robot.util.clipToHqBoundedLoc(explore3Target);
-            if (!robot.mapTracker.hasVisited(explore3Target) && robot.util.onTheMap(explore3Target))
-                return;
+            if (!robot.mapTracker.hasVisited(explore3Target) && robot.util.onTheMap(explore3Target)) {
+                turnSetExploreTarget = uc.getRound();
+                // Estimate the amount of time you expect to take to get to the target
+                EXPLORE_TARGET_TIMEOUT = (int) (2 * Math.sqrt(currLoc.distanceSquared(explore3Target)) *
+                        uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN));
+            }
         }
         // robot.debug.println("ERROR: Could not find a new explore3 target!");
     }
 
     void checkDirection() {
+        // Give up if this target has taken too long
+        if (explore3Target != null && robot.util.onTheMap(explore3Target)
+                && !robot.mapTracker.hasVisited(explore3Target)
+                && turnSetExploreTarget + EXPLORE_TARGET_TIMEOUT > uc.getRound()) {
+            assignExplore3Dir(exploreDir);
+            return;
+        }
+
         if (isValidExploreDir(exploreDir) && robot.util.onTheMap(explore3Target)) {
             if (explore3Target.distanceSquared(uc.getLocation()) <= visionRadius) {
                 assignExplore3Dir(exploreDir);

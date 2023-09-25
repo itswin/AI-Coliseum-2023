@@ -145,18 +145,18 @@ public class Nav {
     }
 
     void move(Location target) {
-        move(target, false, true, BYTECODE_REMAINING);
+        move(target, false, BYTECODE_REMAINING);
     }
 
     void move(Location target, int bytecodeCushion) {
-        move(target, false, true, bytecodeCushion);
+        move(target, false, bytecodeCushion);
     }
 
     void move(Location target, boolean greedy) {
-        move(target, greedy, true, BYTECODE_REMAINING);
+        move(target, greedy, BYTECODE_REMAINING);
     }
 
-    void move(Location target, boolean greedy, boolean avoidHQ, int bytecodeCushion) {
+    void move(Location target, boolean greedy, int bytecodeCushion) {
         if (target == null)
             return;
         robot.debug.setIndicatorLine(uc.getLocation(), target, 255, 0, 200);

@@ -1,5 +1,7 @@
 package MPWorking;
 
+import java.util.function.BiPredicate;
+
 import MPWorking.fast.*;
 
 import aic2023.user.*;
@@ -72,6 +74,66 @@ public class MapTracker {
         }
     }
 
+    void invalidateSymmetries(Location loc) {
+        if (!robot.util.mapBoundsInitialized)
+            return;
+
+        int vertSym = robot.comms.readSymmetryVertical();
+        int horizSym = robot.comms.readSymmetryHorizontal();
+        int rotSym = robot.comms.readSymmetryRotational();
+
+        // Only one symmetry left, do not invalidate
+        if (vertSym + horizSym + rotSym == 1)
+            return;
+
+        BiPredicate<Integer, Integer> isReflectedTile = (tile1, tile2) -> {
+            if (tile2 == TileType.UNKNOWN) {
+                return true;
+            } else if (tile1 == TileType.ENEMY_HQ) {
+                return tile2 == TileType.FRIENDLY_HQ;
+            } else if (tile1 == TileType.FRIENDLY_HQ) {
+                return tile2 == TileType.ENEMY_HQ;
+            }
+
+            return tile1 == tile2;
+        };
+
+        int[] indices = robot.util.getMapIndices(loc);
+        Location reflectedLoc;
+        int tile1 = tileType[indices[0]][indices[1]];
+        int tile2;
+        int[] reflectedIndices;
+        if (vertSym == 1) {
+            reflectedLoc = robot.util.reflectVertical(loc);
+            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
+            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            if (!isReflectedTile.test(tile1, tile2)) {
+                robot.comms.writeSymmetryVertical(0);
+                robot.debug.println("Invalidated vertical symmetry");
+            }
+        }
+
+        if (horizSym == 1) {
+            reflectedLoc = robot.util.reflectHorizontal(loc);
+            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
+            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            if (!isReflectedTile.test(tile1, tile2)) {
+                robot.comms.writeSymmetryHorizontal(0);
+                robot.debug.println("Invalidated horizontal symmetry");
+            }
+        }
+
+        if (rotSym == 1) {
+            reflectedLoc = robot.util.reflectRotational(loc);
+            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
+            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            if (!isReflectedTile.test(tile1, tile2)) {
+                robot.comms.writeSymmetryRotational(0);
+                robot.debug.println("Invalidated rotational symmetry");
+            }
+        }
+    }
+
     void markSeen() {
         if (!initialized)
             return;
@@ -86,6 +148,7 @@ public class MapTracker {
             if (tileType[indices[0]][indices[1]] == TileType.UNKNOWN) {
                 if (uc.canSenseLocation(loc)) {
                     visit(loc);
+                    invalidateSymmetries(loc);
                 } else if (uc.isOutOfMap(loc)) {
                     robot.util.updateMapBounds(loc);
                     tileType[indices[0]][indices[1]] = TileType.OUT_OF_BOUNDS;

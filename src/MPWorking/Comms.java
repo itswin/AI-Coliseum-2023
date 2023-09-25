@@ -5,7 +5,7 @@ import aic2023.user.*;
 public class Comms {
 
     private UnitController uc;
-    private Robot r;
+    private Robot robot;
 
     final public class HqFlagsEnum {
         public int UNKNOWN_FLAG = 0;
@@ -28,9 +28,9 @@ public class Comms {
     public final int STADIUM_SLOTS = 16;
     public final int NUM_SLOTS = 1;
 
-    public Comms(UnitController u, Robot robot) {
+    public Comms(UnitController u, Robot r) {
         uc = u;
-        r = robot;
+        robot = r;
     }
 
     public Location readHqLocation() {
@@ -218,7 +218,7 @@ public class Comms {
             slotLoc = readBase(slot);
             if (slotLoc.x == -1) {
                 writeBase(slot, loc);
-                uc.println("Logging base at " + loc + " in slot " + slot);
+                robot.debug.println("Logging base at " + loc + " in slot " + slot);
                 return;
             } else if (slotLoc.equals(loc)) {
                 return;
@@ -258,7 +258,7 @@ public class Comms {
             slotLoc = readStadium(slot);
             if (slotLoc.x == -1) {
                 writeStadium(slot, loc);
-                uc.println("Logging stadium at " + loc + " in slot " + slot);
+                robot.debug.println("Logging stadium at " + loc + " in slot " + slot);
                 return;
             } else if (slotLoc.equals(loc)) {
                 return;

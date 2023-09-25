@@ -5,7 +5,7 @@ import aic2023.user.*;
 public class Comms {
 
     private UnitController uc;
-    private Robot r;
+    private Robot robot;
 
     final public class HqFlagsEnum {
         public int UNKNOWN_FLAG = 0;
@@ -22,9 +22,9 @@ public class Comms {
     final HqFlagsEnum HqFlags = new HqFlagsEnum();
     // CONSTS
 
-    public Comms(UnitController u, Robot robot) {
+    public Comms(UnitController u, Robot r) {
         uc = u;
-        r = robot;
+        robot = r;
     }
 
     public Location readHqLocation() {

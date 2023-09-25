@@ -40,8 +40,8 @@ public class Comms {
     public void init() {
         initMap();
         initSymmetry();
-            initBase();
-            initStadium();
+        initBase();
+        initStadium();
     }
 
     public void initMap() {
@@ -85,7 +85,6 @@ public class Comms {
             writeStadium(i, new Location(-1, -1));
         }
     }
-
 
     public int readMapXMin() {
         return uc.read(0);
@@ -215,7 +214,7 @@ public class Comms {
             slotLoc = readBase(slot);
             if (slotLoc.x == -1) {
                 writeBase(slot, loc);
-                uc.println("Logging base at " + loc + " in slot " + slot);
+                r.debug.println("Logging base at " + loc + " in slot " + slot);
                 return;
             } else if (slotLoc.equals(loc)) {
                 return;
@@ -255,7 +254,7 @@ public class Comms {
             slotLoc = readStadium(slot);
             if (slotLoc.x == -1) {
                 writeStadium(slot, loc);
-                uc.println("Logging stadium at " + loc + " in slot " + slot);
+                r.debug.println("Logging stadium at " + loc + " in slot " + slot);
                 return;
             } else if (slotLoc.equals(loc)) {
                 return;
