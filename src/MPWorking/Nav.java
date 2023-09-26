@@ -138,7 +138,7 @@ public class Nav {
 
         for (Direction dir : importantDirs) {
             if (uc.canMove(dir)) {
-                uc.move(dir);
+                robot.move(dir);
                 return;
             }
         }
@@ -175,7 +175,7 @@ public class Nav {
             Direction dir = getBestDir(target, bytecodeCushion);
             if (dir != null && uc.canMove(dir)) {
                 if (!visitedTracker.check(currLoc.add(dir))) {
-                    uc.move(dir);
+                    robot.move(dir);
                     return;
                 } else {
                     activateGreedy();

@@ -23,6 +23,7 @@ public class Robot {
     public Team team;
     public Team opponent;
     public UnitInfo[] enemies;
+    public UnitInfo[] allies;
 
     public Location closestEnemyBatter;
     public int roundSeenEnemyBatter;
@@ -120,6 +121,7 @@ public class Robot {
         }
 
         enemies = uc.senseUnits(VISION_RANGE, opponent);
+        allies = uc.senseUnits(VISION_RANGE, team);
         computeClosestEnemyBatter();
     }
 
@@ -206,6 +208,7 @@ public class Robot {
             return;
         uc.move(dir);
         enemies = uc.senseUnits(VISION_RANGE, opponent);
+        allies = uc.senseUnits(VISION_RANGE, team);
         // (Re)Compute closest enemy?
     }
 

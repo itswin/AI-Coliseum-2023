@@ -81,7 +81,7 @@ public class MicroBatter {
             microInfo[8].updateEnemy();
         }
 
-        units = uc.senseUnits(VISION_RANGE, uc.getTeam());
+        units = robot.allies;
         for (UnitInfo unit : units) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;

@@ -95,7 +95,7 @@ public class Pathfinding {
                 }
             }
             if (bestDir != null)
-                uc.move(bestDir);
+                robot.move(bestDir);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -177,7 +177,7 @@ public class Pathfinding {
                 for (int i = 8; i-- > 0;) {
                     Location newLoc = myLoc.add(dir);
                     if (canMove(dir)) {
-                        uc.move(dir);
+                        robot.move(dir);
                         // robot.debug.println("Moving in dir: " + dir, id);
                         return true;
                     }
@@ -239,7 +239,7 @@ public class Pathfinding {
                 }
 
                 if (canMove(dir))
-                    uc.move(dir);
+                    robot.move(dir);
             } catch (Exception e) {
                 e.printStackTrace();
             }

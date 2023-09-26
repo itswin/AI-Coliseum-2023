@@ -105,9 +105,9 @@ public class Batter extends Robot {
 
         // Bat away any adjacent enemies
         // TODO: Pick a "best" enemy
-        UnitInfo[] enemies = uc.senseUnits(ACTION_RANGE, uc.getTeam().getOpponent());
-        if (enemies.length > 0) {
-            Direction dir = uc.getLocation().directionTo(enemies[0].getLocation());
+        UnitInfo[] adjEnemies = uc.senseUnits(ACTION_RANGE, uc.getTeam().getOpponent());
+        if (adjEnemies.length > 0) {
+            Direction dir = uc.getLocation().directionTo(adjEnemies[0].getLocation());
             for (int strength = GameConstants.MAX_STRENGTH + 1; --strength >= 0;) {
                 if (uc.canBat(dir, strength)) {
                     uc.bat(dir, strength);
@@ -116,5 +116,55 @@ public class Batter extends Robot {
                 }
             }
         }
+
+        if ((allies.length >= enemies.length + 5) && (enemies.length > 0)) {
+            boolean[] dirs = getBattingDirsKillingEnemy();
+            for (int i = 8; --i >= 0;) {
+                if (dirs[i]) {
+                    uc.bat(util.directions[i], 3);
+                    break;
+                }
+            }
+        }
+    }
+
+    public boolean[] getBattingDirsKillingEnemy() {
+        boolean[] dirs = new boolean[8];
+
+        Direction dir;
+        int i;
+        for (i = 8; --i >= 0;) {
+            dir = util.directions[i];
+            if (uc.canBat(dir, 3)) {
+                dirs[i] = killsEnemyInBattingDir(dir);
+            }
+        }
+
+        return dirs;
+    }
+
+    public boolean killsEnemyInBattingDir(Direction dir) {
+        Location loc = uc.getLocation().add(dir);
+
+        UnitInfo unitInfo;
+        for (int i = 0; i < 3; i++) {
+            loc = loc.add(dir);
+            if (!uc.canSenseLocation(loc))
+                return false;
+            if (uc.senseObjectAtLocation(loc, false) == MapObject.WATER)
+                return false;
+            unitInfo = uc.senseUnitAtLocation(loc);
+            if (unitInfo != null) {
+                return isKillableEnemy(unitInfo);
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isKillableEnemy(UnitInfo info) {
+        return info.getTeam() == opponent &&
+                info.getType() != UnitType.CATCHER &&
+                info.getType() != UnitType.HQ;
     }
 }
