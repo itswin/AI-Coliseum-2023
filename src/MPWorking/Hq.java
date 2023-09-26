@@ -104,8 +104,8 @@ public class Hq extends Robot {
             recruitType = UnitType.PITCHER;
         }
 
-        Direction dir = exploreDirections[exploreDirIndex];
-        if (uc.canRecruitUnit(recruitType, dir)) {
+        Direction dir = getNextBuildDir();
+        if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
             uc.recruitUnit(recruitType, dir);
             exploreDirIndex++;
             exploreDirIndex %= exploreDirections.length;
@@ -121,12 +121,28 @@ public class Hq extends Robot {
             recruitType = UnitType.BATTER;
         }
 
-        Direction dir = exploreDirections[exploreDirIndex];
-        if (uc.canRecruitUnit(recruitType, dir)) {
+        Direction dir = getNextBuildDir();
+        if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
             uc.recruitUnit(recruitType, dir);
             exploreDirIndex++;
             exploreDirIndex %= exploreDirections.length;
             nextFlag = util.dirToFlag(dir);
         }
+    }
+
+    // Returns the next direction to build in, or null if there are none
+    public Direction getNextBuildDir() {
+        Direction dir;
+        Location loc = uc.getLocation();
+        for (int tries = 0; tries < exploreDirections.length; tries++) {
+            dir = exploreDirections[exploreDirIndex];
+            if (uc.senseUnitAtLocation(loc.add(dir)) == null &&
+                    uc.senseObjectAtLocation(loc, true) != MapObject.BALL) {
+                return dir;
+            }
+            exploreDirIndex++;
+            exploreDirIndex %= exploreDirections.length;
+        }
+        return null;
     }
 }
