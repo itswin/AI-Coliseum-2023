@@ -16,13 +16,13 @@ public class Util {
     /** Array containing all the possible movement directions. */
     final Direction[] directions = {
             Direction.NORTH,
-            Direction.NORTHEAST,
-            Direction.EAST,
-            Direction.SOUTHEAST,
-            Direction.SOUTH,
-            Direction.SOUTHWEST,
-            Direction.WEST,
             Direction.NORTHWEST,
+            Direction.WEST,
+            Direction.SOUTHWEST,
+            Direction.SOUTH,
+            Direction.SOUTHEAST,
+            Direction.EAST,
+            Direction.NORTHEAST,
     };
 
     final Direction[] X_DIRECTIONS = {
@@ -43,13 +43,13 @@ public class Util {
     /** Array containing all the possible movement directions. */
     final Direction[] DIRS_ZERO = {
             Direction.NORTH,
-            Direction.NORTHEAST,
-            Direction.EAST,
-            Direction.SOUTHEAST,
-            Direction.SOUTH,
-            Direction.SOUTHWEST,
-            Direction.WEST,
             Direction.NORTHWEST,
+            Direction.WEST,
+            Direction.SOUTHWEST,
+            Direction.SOUTH,
+            Direction.SOUTHEAST,
+            Direction.EAST,
+            Direction.NORTHEAST,
             Direction.ZERO,
     };
 

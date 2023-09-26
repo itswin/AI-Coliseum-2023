@@ -18,6 +18,7 @@ public class Hq extends Robot {
 
     public int nextFlag;
 
+    public boolean[] canBuildInDir;
     public Direction[] exploreDirections;
     public int exploreDirIndex;
 
@@ -31,8 +32,34 @@ public class Hq extends Robot {
 
         state = HqState.INIT;
         nextFlag = 0;
-        exploreDirections = explore.getOptimalExploreOrder();
+        loadExploreDirections();
         exploreDirIndex = 0;
+    }
+
+    public void loadExploreDirections() {
+        canBuildInDir = new boolean[9];
+        Location loc;
+        int numBuildableDirs = 0;
+        for (Direction dir : Direction.values()) {
+            if (dir == Direction.ZERO)
+                continue;
+            // Check that the location is on the map and is not water.
+            loc = uc.getLocation().add(dir);
+            canBuildInDir[dir.ordinal()] = uc.canSenseLocation(loc) &&
+                    uc.senseObjectAtLocation(loc, false) != MapObject.WATER;
+            if (canBuildInDir[dir.ordinal()]) {
+                numBuildableDirs++;
+            }
+        }
+
+        Direction[] optimalExploreOrder = explore.getOptimalExploreOrder();
+        exploreDirections = new Direction[numBuildableDirs];
+        int idx = 0;
+        for (Direction dir : optimalExploreOrder) {
+            if (canBuildInDir[dir.ordinal()]) {
+                exploreDirections[idx++] = dir;
+            }
+        }
     }
 
     public void initTurn() {
