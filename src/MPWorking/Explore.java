@@ -90,12 +90,13 @@ public class Explore {
             x += Math.cos(angle) * EXPLORE_DIST;
             y += Math.sin(angle) * EXPLORE_DIST;
             explore3Target = new Location((int) x, (int) y);
-            explore3Target = robot.util.clipToHqBoundedLoc(explore3Target);
-            if (!robot.mapTracker.hasVisited(explore3Target) && robot.util.onTheMap(explore3Target)) {
+            explore3Target = robot.util.clipToKnownBounds(explore3Target);
+            if (!robot.mapTracker.hasVisited(explore3Target)) {
                 turnSetExploreTarget = uc.getRound();
                 // Estimate the amount of time you expect to take to get to the target
                 EXPLORE_TARGET_TIMEOUT = (int) (2 * Math.sqrt(currLoc.distanceSquared(explore3Target)) *
                         uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN));
+                return;
             }
         }
         // robot.debug.println("ERROR: Could not find a new explore3 target!");
@@ -105,7 +106,7 @@ public class Explore {
         // Give up if this target has taken too long
         if (explore3Target != null && robot.util.onTheMap(explore3Target)
                 && !robot.mapTracker.hasVisited(explore3Target)
-                && turnSetExploreTarget + EXPLORE_TARGET_TIMEOUT > uc.getRound()) {
+                && turnSetExploreTarget + EXPLORE_TARGET_TIMEOUT < uc.getRound()) {
             assignExplore3Dir(exploreDir);
             return;
         }
@@ -116,6 +117,12 @@ public class Explore {
             }
             return;
         }
+
+        if (!robot.util.onTheMap(explore3Target)) {
+            assignExplore3Dir(exploreDir);
+            return;
+        }
+
         // System.err.println("Checking new direction!");
         if (robot.util.isDiagonalDirection(exploreDir)) {
             getClosestExplore3Direction();

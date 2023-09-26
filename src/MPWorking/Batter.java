@@ -5,8 +5,11 @@ import java.util.function.Predicate;
 import aic2023.user.*;
 
 public class Batter extends Robot {
+    MicroBatter microBatter;
+
     public Batter(UnitController u) {
         super(u);
+        microBatter = new MicroBatter(uc, this);
     }
 
     public void initTurn() {
@@ -14,9 +17,18 @@ public class Batter extends Robot {
         comms.incrementBatters();
     }
 
+    @Override
     public void takeTurn() {
-        super.takeTurn();
+        if (shouldAttackEarly()) {
+            attack();
+        }
+        if (!microBatter.doMicro()) {
+            moveToTarget();
+        }
+        attack();
+    }
 
+    public void moveToTarget() {
         // None of our batters around the location
         Predicate<Location> availablePred = (loc) -> {
             Location[] adjLocs = util.getAdjLocs(loc);
@@ -76,8 +88,23 @@ public class Batter extends Robot {
                 nav.move(target, greedy);
             }
         }
+    }
+
+    // TODO: If there is a baseball nearby that you can walk to and
+    // bat into an enemy, do not attack first.
+    // Otherwise, bat any enemy that is adjacent to you.
+    public boolean shouldAttackEarly() {
+        return true;
+    }
+
+    // Bat any enemies near you, or
+    // TODO: Any baseballs nearby that will hit an enemy.
+    public void attack() {
+        if (!uc.canAct())
+            return;
 
         // Bat away any adjacent enemies
+        // TODO: Pick a "best" enemy
         UnitInfo[] enemies = uc.senseUnits(ACTION_RANGE, uc.getTeam().getOpponent());
         if (enemies.length > 0) {
             Direction dir = uc.getLocation().directionTo(enemies[0].getLocation());

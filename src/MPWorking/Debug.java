@@ -24,7 +24,7 @@ public class Debug {
 
     public void println(boolean cond, String s, int id) {
         if (VERBOSE && cond && (id < 0 || uc.getInfo().getID() == id)) {
-            uc.println(s);
+            uc.println("ID: " + uc.getInfo().getID() + "\tRound: " + uc.getRound() + "\t" + s);
         }
     }
 

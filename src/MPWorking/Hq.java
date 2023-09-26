@@ -44,9 +44,8 @@ public class Hq extends Robot {
         comms.resetUnitCount();
     }
 
+    @Override
     public void takeTurn() {
-        super.takeTurn();
-
         switchState();
         doStateAction();
 

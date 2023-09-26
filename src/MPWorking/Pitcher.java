@@ -5,14 +5,17 @@ import java.util.function.Predicate;
 import aic2023.user.*;
 
 public class Pitcher extends Robot {
+    MicroPitcher microPitcher;
 
     public Pitcher(UnitController u) {
         super(u);
+        microPitcher = new MicroPitcher(uc, this);
     }
 
     public void initTurn() {
         super.initTurn();
         comms.incrementPitchers();
+        didMicro = false;
     }
 
     // Pitchers don't rotate through enemy HQs
@@ -30,8 +33,16 @@ public class Pitcher extends Robot {
         }
     }
 
+    @Override
     public void takeTurn() {
-        super.takeTurn();
+        if (roundSeenEnemyBatter == uc.getRound()) {
+            if (shouldAttack()) {
+                didMicro = microPitcher.doMicro(false);
+                attack();
+            }
+            if (microPitcher.flee())
+                didMicro = true;
+        }
 
         Predicate<Location> availablePred = (loc) -> {
             UnitInfo unit = uc.senseUnitAtLocation(loc);
@@ -52,5 +63,14 @@ public class Pitcher extends Robot {
         }
 
         nav.move(target);
+    }
+
+    public boolean shouldAttack() {
+        return false;
+    }
+
+    // TODO: If holding a baseball and you can place it in front of a batter
+    // such that they can hit an enemy, do so.
+    public void attack() {
     }
 }

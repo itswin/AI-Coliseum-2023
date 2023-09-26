@@ -246,10 +246,20 @@ public class Util {
         return Math.min(Math.max(n, lo), hi);
     }
 
-    Location clipToHqBoundedLoc(Location loc) {
+    Location clipToKnownBounds(Location loc) {
+        int mapXMin = robot.comms.readMapXMin();
+        int mapXMax = robot.comms.readMapXMax();
+        int mapYMin = robot.comms.readMapYMin();
+        int mapYMax = robot.comms.readMapYMax();
+
+        int minX = Math.max(robot.hq.x - GameConstants.MAX_MAP_SIZE, mapXMin == -1 ? Integer.MIN_VALUE : mapXMin);
+        int maxX = Math.min(robot.hq.x + GameConstants.MAX_MAP_SIZE, mapXMax == -1 ? Integer.MAX_VALUE : mapXMax);
+        int minY = Math.max(robot.hq.y - GameConstants.MAX_MAP_SIZE, mapYMin == -1 ? Integer.MIN_VALUE : mapYMin);
+        int maxY = Math.min(robot.hq.y + GameConstants.MAX_MAP_SIZE, mapYMax == -1 ? Integer.MAX_VALUE : mapYMax);
+
         return new Location(
-                clip(loc.x, robot.hq.x - GameConstants.MAX_MAP_SIZE, robot.hq.x + GameConstants.MAX_MAP_SIZE),
-                clip(loc.y, robot.hq.y - GameConstants.MAX_MAP_SIZE, robot.hq.y + GameConstants.MAX_MAP_SIZE));
+                clip(loc.x, minX, maxX),
+                clip(loc.y, minY, maxY));
     }
 
     public void updateMapBounds(Location loc) {
