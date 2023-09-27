@@ -15,6 +15,10 @@ public class Batter extends Robot {
     public void initTurn() {
         super.initTurn();
         comms.incrementBatters();
+
+        if (shouldLoadNextTarget()) {
+            loadNextTarget();
+        }
     }
 
     @Override
@@ -45,23 +49,27 @@ public class Batter extends Robot {
         };
         Location visibleTarget = null;
         boolean isExploring = false;
-        if ((visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
+        boolean isTargetingBase = false;
+        boolean isTargetingStadium = false;
+        if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
+            util.logStadiumAndReflection(visibleTarget);
+            isTargetingStadium = true;
+        } else if ((visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
             comms.logBase(visibleTarget);
-        } else if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
-            comms.logStadium(visibleTarget);
+            isTargetingBase = true;
         }
 
         if (visibleTarget != null) {
             target = visibleTarget;
         }
 
-        // If we're targeting a base/stadium and not all of the squares around
-        // it are passable, then don't move if we're adjacent.
         if (isExploring) {
             nav.move(target);
         } else {
             boolean shouldNav = true;
             boolean greedy = false;
+            // If we're targeting a base/stadium and not all of the squares around
+            // it are passable, then don't move if we're adjacent.
             if (uc.getLocation().distanceSquared(target) <= 2) {
                 // Make the target impassable if it's a base/stadium
                 boolean[] imp = new boolean[9];
@@ -84,9 +92,16 @@ public class Batter extends Robot {
                 }
             }
 
+            // If you've ended up on the target due to micro, then move off of it.
+            if (uc.getLocation().equals(target)) {
+                shouldNav = true;
+            }
+
             if (shouldNav) {
                 nav.move(target, greedy);
             }
+
+            heartbeatTarget(isTargetingBase, isTargetingStadium);
         }
     }
 
@@ -166,5 +181,105 @@ public class Batter extends Robot {
         return info.getTeam() == opponent &&
                 info.getType() != UnitType.CATCHER &&
                 info.getType() != UnitType.HQ;
+    }
+
+    public void heartbeatTarget(boolean isTargetingBase, boolean isTargetingStadium) {
+        // Only heartbeat if we're adjacent to the target
+        if (uc.getLocation().distanceSquared(target) > 2)
+            return;
+
+        if (isTargetingBase) {
+            int baseSlot = util.getBaseSlot(target);
+            if (baseSlot != -1) {
+                comms.sendBaseBatterHeartbeat(baseSlot);
+            }
+        }
+
+        if (isTargetingStadium) {
+            int stadiumSlot = util.getStadiumSlot(target);
+            if (stadiumSlot != -1) {
+                comms.sendStadiumBatterHeartbeat(stadiumSlot);
+            }
+        }
+    }
+
+    public void rotateTargetType() {
+        if (targetType == TargetType.STADIUM) {
+            targetType = TargetType.BASE;
+            commsBaseIndex = 0;
+        } else if (targetType == TargetType.BASE) {
+            targetType = TargetType.ENEMY_HQ;
+            enemyHqIndex = 0;
+        } else if (targetType == TargetType.ENEMY_HQ) {
+            targetType = TargetType.EXPLORE;
+            justStartedExploring = true;
+        } else if (targetType == TargetType.EXPLORE) {
+            targetType = TargetType.STADIUM;
+            commsStadiumIndex = 0;
+        }
+    }
+
+    @Override
+    public boolean shouldLoadNextTarget() {
+        if (super.shouldLoadNextTarget())
+            return true;
+
+        // If your slot has become occupied, rotate to the next target.
+        if (targetType == TargetType.BASE) {
+            return !comms.isBaseBatterHeartbeatDead(commsBaseIndex);
+        } else if (targetType == TargetType.STADIUM) {
+            return !comms.isStadiumBatterHeartbeatDead(commsStadiumIndex);
+        }
+
+        return false;
+    }
+
+    public void loadNextTarget() {
+        if (targetType == TargetType.BASE) {
+            while (commsBaseIndex < comms.BASE_SLOTS &&
+                    (target = comms.readBase(commsBaseIndex)).x != -1) {
+                if (comms.isBaseBatterHeartbeatDead(commsBaseIndex)) {
+                    return;
+                }
+                commsBaseIndex++;
+            }
+            rotateTargetType();
+            loadNextTarget();
+        } else if (targetType == TargetType.STADIUM) {
+            while (commsStadiumIndex < comms.STADIUM_SLOTS &&
+                    (target = comms.readStadium(commsStadiumIndex)).x != -1) {
+                if (comms.isStadiumBatterHeartbeatDead(commsStadiumIndex)) {
+                    return;
+                }
+                commsStadiumIndex++;
+            }
+            rotateTargetType();
+            loadNextTarget();
+        } else if (targetType == TargetType.ENEMY_HQ) {
+            if (!util.mapBoundsInitialized) {
+                rotateTargetType();
+                loadNextTarget();
+            } else {
+                Location[] enemyHqLocations = util.getValidSymmetryLocs(hq);
+                if (enemyHqIndex >= enemyHqLocations.length) {
+                    rotateTargetType();
+                    loadNextTarget();
+                } else {
+                    target = enemyHqLocations[enemyHqIndex++];
+                }
+            }
+        } else if (targetType == TargetType.EXPLORE) {
+            if (justStartedExploring) {
+                target = explore.getExplore3Target();
+                justStartedExploring = false;
+            } else {
+                Location newTarget = explore.getExplore3Target();
+                // If we reset the explore target, rotate target types
+                if (!target.equals(newTarget)) {
+                    rotateTargetType();
+                    loadNextTarget();
+                }
+            }
+        }
     }
 }

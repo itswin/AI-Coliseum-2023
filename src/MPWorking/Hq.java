@@ -69,6 +69,8 @@ public class Hq extends Robot {
         numBatters = comms.readNumBatters();
         numCatchers = comms.readNumCatchers();
         comms.resetUnitCount();
+
+        decrementHeartbeats();
     }
 
     @Override
@@ -144,5 +146,17 @@ public class Hq extends Robot {
             exploreDirIndex %= exploreDirections.length;
         }
         return null;
+    }
+
+    public void decrementHeartbeats() {
+        for (int i = comms.BASE_SLOTS; --i >= 0;) {
+            comms.decrementBasePitcherHeartbeat(i);
+            comms.decrementBaseBatterHeartbeat(i);
+        }
+
+        for (int i = comms.STADIUM_SLOTS; --i >= 0;) {
+            comms.decrementStadiumPitcherHeartbeat(i);
+            comms.decrementStadiumBatterHeartbeat(i);
+        }
     }
 }

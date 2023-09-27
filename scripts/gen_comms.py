@@ -36,16 +36,22 @@ SCHEMA = {
         'fields': [
             'x',
             'y',
+            'pitcher_heartbeat',
+            'batter_heartbeat',
         ],
         'is_loc': True,
+        'heartbeat_timeout': 5,
     },
     'stadium': {
         'slots': 16,
         'fields': [
             'x',
             'y',
+            'pitcher_heartbeat',
+            'batter_heartbeat',
         ],
         'is_loc': True,
+        'heartbeat_timeout': 5,
     },
     'num': {
         'slots': 1,
@@ -100,13 +106,31 @@ def gen():
             else:
                 out += f"""
     public int read{capitalize(datatype)}{capitalize(field)}(int slot) {{
-        return uc.read({fields_so_far} + slot * {len(SCHEMA[datatype]['fields'])});
+        return uc.read({fields_so_far} + slot);
     }}
 
     public void write{capitalize(datatype)}{capitalize(field)}(int slot, int value) {{
-        uc.write({fields_so_far} + slot * {len(SCHEMA[datatype]['fields'])}, value);
+        uc.write({fields_so_far} + slot, value);
     }}
 """
+                if field.endswith('_heartbeat'):
+                    out += f"""
+    public void send{capitalize(datatype)}{capitalize(field)}(int slot) {{
+        write{capitalize(datatype)}{capitalize(field)}(slot, {SCHEMA[datatype]['heartbeat_timeout']});
+    }}
+
+    public void decrement{capitalize(datatype)}{capitalize(field)}(int slot) {{
+        int value = read{capitalize(datatype)}{capitalize(field)}(slot);
+        if (value > 0) {{
+            write{capitalize(datatype)}{capitalize(field)}(slot, value - 1);
+        }}
+    }}
+
+    public boolean is{capitalize(datatype)}{capitalize(field)}Dead(int slot) {{
+        return read{capitalize(datatype)}{capitalize(field)}(slot) == 0;
+    }}
+"""
+
             fields_so_far += SCHEMA[datatype]['slots']
         if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
             out += f"""

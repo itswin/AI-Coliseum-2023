@@ -142,19 +142,23 @@ public class Explore {
     }
 
     boolean eastCloser() {
-        int mapWidth = robot.comms.readMapWidth();
-        if (mapWidth == -1) {
+        int xMin = robot.comms.readMapXMin();
+        int xMax = robot.comms.readMapXMax();
+        if (xMin == -1 || xMax == -1) {
             return robot.util.randomInt(2) < 1;
         }
-        return mapWidth - uc.getLocation().x <= uc.getLocation().x;
+
+        return xMax - uc.getLocation().x <= uc.getLocation().x - xMin;
     }
 
     boolean northCloser() {
-        int mapHeight = robot.comms.readMapHeight();
-        if (mapHeight == -1) {
+        int yMin = robot.comms.readMapYMin();
+        int yMax = robot.comms.readMapYMax();
+        if (yMin == -1 || yMax == -1) {
             return robot.util.randomInt(2) < 1;
         }
-        return mapHeight - uc.getLocation().y <= uc.getLocation().y;
+
+        return yMax - uc.getLocation().y <= uc.getLocation().y - yMin;
     }
 
     void getClosestExplore3Direction() {

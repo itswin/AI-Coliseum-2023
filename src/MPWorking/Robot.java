@@ -39,8 +39,8 @@ public class Robot {
     public int commsStadiumIndex;
 
     final class TargetTypeEnum {
-        public final int BASE = 0;
-        public final int STADIUM = 1;
+        public final int STADIUM = 0;
+        public final int BASE = 1;
         public final int ENEMY_HQ = 2;
         public final int EXPLORE = 3;
     }
@@ -105,7 +105,6 @@ public class Robot {
         targetType = TargetType.BASE;
         commsBaseIndex = 0;
         commsStadiumIndex = 0;
-        targetType = TargetType.BASE;
         target = null;
         justStartedExploring = false;
         enemyHqIndex = 0;
@@ -115,10 +114,6 @@ public class Robot {
 
     public void initTurn() {
         pathfinding.initTurn();
-
-        if (shouldLoadNextTarget()) {
-            loadNextTarget();
-        }
 
         enemies = uc.senseUnits(VISION_RANGE, opponent);
         allies = uc.senseUnits(VISION_RANGE, team);
@@ -137,70 +132,11 @@ public class Robot {
         return util.getClosestLoc(uc.senseObjects(mapObj, VISION_RANGE), pred);
     }
 
-    public void rotateTargetType() {
-        if (targetType == TargetType.BASE) {
-            targetType = TargetType.STADIUM;
-            commsStadiumIndex = 0;
-        } else if (targetType == TargetType.STADIUM) {
-            targetType = TargetType.ENEMY_HQ;
-            enemyHqIndex = 0;
-        } else if (targetType == TargetType.ENEMY_HQ) {
-            targetType = TargetType.EXPLORE;
-            justStartedExploring = true;
-        } else if (targetType == TargetType.EXPLORE) {
-            targetType = TargetType.BASE;
-            commsBaseIndex = 0;
-        }
-    }
-
     public boolean shouldLoadNextTarget() {
         // Always load next target if exploring
         return target == null ||
-                uc.getLocation().distanceSquared(target) <= VISION_RANGE ||
+                uc.getLocation().distanceSquared(target) <= 2 ||
                 targetType == TargetType.EXPLORE;
-    }
-
-    public void loadNextTarget() {
-        if (targetType == TargetType.BASE) {
-            if (commsBaseIndex >= comms.BASE_SLOTS ||
-                    (target = comms.readBase(commsBaseIndex++)).x == -1) {
-                rotateTargetType();
-                loadNextTarget();
-            }
-        } else if (targetType == TargetType.STADIUM) {
-            if (commsStadiumIndex >= comms.STADIUM_SLOTS ||
-                    (target = comms.readStadium(commsStadiumIndex++)).x == -1) {
-                rotateTargetType();
-                loadNextTarget();
-            }
-        } else if (targetType == TargetType.ENEMY_HQ) {
-            if (!util.mapBoundsInitialized) {
-                rotateTargetType();
-                loadNextTarget();
-            } else {
-                Location[] enemyHqLocations = util.getValidSymmetryLocs(hq);
-                if (enemyHqIndex >= enemyHqLocations.length) {
-                    rotateTargetType();
-                    loadNextTarget();
-                } else {
-                    target = enemyHqLocations[enemyHqIndex++];
-                }
-            }
-        } else if (targetType == TargetType.EXPLORE) {
-            if (justStartedExploring) {
-                target = explore.getExplore3Target();
-                justStartedExploring = false;
-            } else {
-                Location newTarget = explore.getExplore3Target();
-                // If we reset the explore target, rotate target types
-                if (!target.equals(newTarget)) {
-                    rotateTargetType();
-                    loadNextTarget();
-                } else {
-                    target = newTarget;
-                }
-            }
-        }
     }
 
     void move(Direction dir) {
@@ -213,18 +149,23 @@ public class Robot {
     }
 
     void computeClosestEnemyBatter() {
-        boolean first = true;
+        closestEnemyBatter = null;
+        float minDist = Float.MAX_VALUE;
+        float dist;
         UnitInfo unitInfo;
+        Location unitLoc;
+        Location currLoc = uc.getLocation();
         for (int i = enemies.length; --i >= 0;) {
             unitInfo = enemies[i];
             if (unitInfo.getType() != UnitType.BATTER)
                 continue;
-            if (first || closestEnemyBatter.distanceSquared(uc.getLocation()) > unitInfo.getLocation()
-                    .distanceSquared(uc.getLocation())) {
-                closestEnemyBatter = uc.getLocation();
+            unitLoc = unitInfo.getLocation();
+            dist = currLoc.distanceSquared(unitInfo.getLocation());
+            if (dist < minDist) {
+                minDist = dist;
+                closestEnemyBatter = unitLoc;
                 roundSeenEnemyBatter = uc.getRound();
             }
-            first = false;
         }
     }
 }

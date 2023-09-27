@@ -153,6 +153,12 @@ public class MicroBatter {
             this.location = uc.getLocation().add(dir);
             if (dir != Direction.ZERO && !uc.canMove(dir))
                 canMove = false;
+            // Don't micro onto bases or stadiums
+            if (uc.canSenseLocation(location)) {
+                MapObject mapObj = uc.senseObjectAtLocation(location, false);
+                if (mapObj == MapObject.BASE || mapObj == MapObject.STADIUM)
+                    canMove = false;
+            }
             minDistanceToEnemy = INF;
         }
 

@@ -187,19 +187,65 @@ public class Comms {
     }
 
     public int readBaseX(int slot) {
-        return uc.read(12 + slot * 2);
+        return uc.read(12 + slot);
     }
 
     public void writeBaseX(int slot, int value) {
-        uc.write(12 + slot * 2, value);
+        uc.write(12 + slot, value);
     }
 
     public int readBaseY(int slot) {
-        return uc.read(28 + slot * 2);
+        return uc.read(28 + slot);
     }
 
     public void writeBaseY(int slot, int value) {
-        uc.write(28 + slot * 2, value);
+        uc.write(28 + slot, value);
+    }
+
+    public int readBasePitcherHeartbeat(int slot) {
+        return uc.read(44 + slot);
+    }
+
+    public void writeBasePitcherHeartbeat(int slot, int value) {
+        uc.write(44 + slot, value);
+    }
+
+    public void sendBasePitcherHeartbeat(int slot) {
+        writeBasePitcherHeartbeat(slot, 5);
+    }
+
+    public void decrementBasePitcherHeartbeat(int slot) {
+        int value = readBasePitcherHeartbeat(slot);
+        if (value > 0) {
+            writeBasePitcherHeartbeat(slot, value - 1);
+        }
+    }
+
+    public boolean isBasePitcherHeartbeatDead(int slot) {
+        return readBasePitcherHeartbeat(slot) == 0;
+    }
+
+    public int readBaseBatterHeartbeat(int slot) {
+        return uc.read(60 + slot);
+    }
+
+    public void writeBaseBatterHeartbeat(int slot, int value) {
+        uc.write(60 + slot, value);
+    }
+
+    public void sendBaseBatterHeartbeat(int slot) {
+        writeBaseBatterHeartbeat(slot, 5);
+    }
+
+    public void decrementBaseBatterHeartbeat(int slot) {
+        int value = readBaseBatterHeartbeat(slot);
+        if (value > 0) {
+            writeBaseBatterHeartbeat(slot, value - 1);
+        }
+    }
+
+    public boolean isBaseBatterHeartbeatDead(int slot) {
+        return readBaseBatterHeartbeat(slot) == 0;
     }
 
     public Location readBase(int slot) {
@@ -227,19 +273,65 @@ public class Comms {
     }
 
     public int readStadiumX(int slot) {
-        return uc.read(44 + slot * 2);
+        return uc.read(76 + slot);
     }
 
     public void writeStadiumX(int slot, int value) {
-        uc.write(44 + slot * 2, value);
+        uc.write(76 + slot, value);
     }
 
     public int readStadiumY(int slot) {
-        return uc.read(60 + slot * 2);
+        return uc.read(92 + slot);
     }
 
     public void writeStadiumY(int slot, int value) {
-        uc.write(60 + slot * 2, value);
+        uc.write(92 + slot, value);
+    }
+
+    public int readStadiumPitcherHeartbeat(int slot) {
+        return uc.read(108 + slot);
+    }
+
+    public void writeStadiumPitcherHeartbeat(int slot, int value) {
+        uc.write(108 + slot, value);
+    }
+
+    public void sendStadiumPitcherHeartbeat(int slot) {
+        writeStadiumPitcherHeartbeat(slot, 5);
+    }
+
+    public void decrementStadiumPitcherHeartbeat(int slot) {
+        int value = readStadiumPitcherHeartbeat(slot);
+        if (value > 0) {
+            writeStadiumPitcherHeartbeat(slot, value - 1);
+        }
+    }
+
+    public boolean isStadiumPitcherHeartbeatDead(int slot) {
+        return readStadiumPitcherHeartbeat(slot) == 0;
+    }
+
+    public int readStadiumBatterHeartbeat(int slot) {
+        return uc.read(124 + slot);
+    }
+
+    public void writeStadiumBatterHeartbeat(int slot, int value) {
+        uc.write(124 + slot, value);
+    }
+
+    public void sendStadiumBatterHeartbeat(int slot) {
+        writeStadiumBatterHeartbeat(slot, 5);
+    }
+
+    public void decrementStadiumBatterHeartbeat(int slot) {
+        int value = readStadiumBatterHeartbeat(slot);
+        if (value > 0) {
+            writeStadiumBatterHeartbeat(slot, value - 1);
+        }
+    }
+
+    public boolean isStadiumBatterHeartbeatDead(int slot) {
+        return readStadiumBatterHeartbeat(slot) == 0;
     }
 
     public Location readStadium(int slot) {
@@ -267,11 +359,11 @@ public class Comms {
     }
 
     public int readNumPitchers() {
-        return uc.read(76);
+        return uc.read(140);
     }
 
     public void writeNumPitchers(int value) {
-        uc.write(76, value);
+        uc.write(140, value);
     }
 
     public void incrementPitchers() {
@@ -283,19 +375,19 @@ public class Comms {
     }
 
     public int readNumPitchersLast() {
-        return uc.read(77);
+        return uc.read(141);
     }
 
     public void writeNumPitchersLast(int value) {
-        uc.write(77, value);
+        uc.write(141, value);
     }
 
     public int readNumBatters() {
-        return uc.read(78);
+        return uc.read(142);
     }
 
     public void writeNumBatters(int value) {
-        uc.write(78, value);
+        uc.write(142, value);
     }
 
     public void incrementBatters() {
@@ -307,19 +399,19 @@ public class Comms {
     }
 
     public int readNumBattersLast() {
-        return uc.read(79);
+        return uc.read(143);
     }
 
     public void writeNumBattersLast(int value) {
-        uc.write(79, value);
+        uc.write(143, value);
     }
 
     public int readNumCatchers() {
-        return uc.read(80);
+        return uc.read(144);
     }
 
     public void writeNumCatchers(int value) {
-        uc.write(80, value);
+        uc.write(144, value);
     }
 
     public void incrementCatchers() {
@@ -331,11 +423,11 @@ public class Comms {
     }
 
     public int readNumCatchersLast() {
-        return uc.read(81);
+        return uc.read(145);
     }
 
     public void writeNumCatchersLast(int value) {
-        uc.write(81, value);
+        uc.write(145, value);
     }
 
 }

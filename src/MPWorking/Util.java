@@ -490,4 +490,44 @@ public class Util {
         }
         return sensableAdjLocs;
     }
+
+    public int getBaseSlot(Location loc) {
+        for (int i = 0; i < robot.comms.BASE_SLOTS; i++) {
+            if (robot.comms.readBase(i).equals(loc))
+                return i;
+        }
+        return -1;
+    }
+
+    public int getStadiumSlot(Location loc) {
+        for (int i = 0; i < robot.comms.STADIUM_SLOTS; i++) {
+            if (robot.comms.readStadium(i).equals(loc))
+                return i;
+        }
+        return -1;
+    }
+
+    public void logStadiumAndReflection(Location loc) {
+        robot.comms.logStadium(loc);
+
+        int r = robot.comms.readSymmetryRotational();
+        int h = robot.comms.readSymmetryHorizontal();
+        int v = robot.comms.readSymmetryVertical();
+        Location[] symLocs = getValidSymmetryLocs(loc, v == 1, h == 1, r == 1);
+        if (symLocs != null && symLocs.length == 1) {
+            robot.comms.logStadium(symLocs[0]);
+        }
+    }
+
+    public void logBaseAndReflection(Location loc) {
+        robot.comms.logBase(loc);
+
+        int r = robot.comms.readSymmetryRotational();
+        int h = robot.comms.readSymmetryHorizontal();
+        int v = robot.comms.readSymmetryVertical();
+        Location[] symLocs = getValidSymmetryLocs(loc, v == 1, h == 1, r == 1);
+        if (symLocs != null && symLocs.length == 1) {
+            robot.comms.logBase(symLocs[0]);
+        }
+    }
 }
