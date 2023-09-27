@@ -375,6 +375,7 @@ public class Util {
         return Direction.ZERO;
     }
 
+    // TODO: Buggy
     boolean seesObstacleInWay(Location target) {
         Location loc = uc.getLocation();
         Direction dir = loc.directionTo(target);

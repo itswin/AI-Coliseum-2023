@@ -51,8 +51,7 @@ public class Pitcher extends Robot {
                 didMicro = microPitcher.doMicro(false);
                 attack();
             }
-            if (!util.seesObstacleInWay(closestEnemyBatter) &&
-                    microPitcher.flee()) {
+            if (microPitcher.flee()) {
                 didMicro = true;
             }
         }

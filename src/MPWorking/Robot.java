@@ -160,6 +160,8 @@ public class Robot {
             if (unitInfo.getType() != UnitType.BATTER)
                 continue;
             unitLoc = unitInfo.getLocation();
+            if (util.seesObstacleInWay(unitLoc))
+                continue;
             dist = currLoc.distanceSquared(unitInfo.getLocation());
             if (dist < minDist) {
                 minDist = dist;

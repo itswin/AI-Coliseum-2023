@@ -144,8 +144,13 @@ public class Explore {
     boolean eastCloser() {
         int xMin = robot.comms.readMapXMin();
         int xMax = robot.comms.readMapXMax();
-        if (xMin == -1 || xMax == -1) {
+        if (xMin == -1 && xMax == -1) {
             return robot.util.randomInt(2) < 1;
+        }
+
+        // If one of the bounds is unknown, go in that direction
+        if (xMin == -1 || xMax == -1) {
+            return xMin == -1;
         }
 
         return xMax - uc.getLocation().x <= uc.getLocation().x - xMin;
@@ -154,8 +159,13 @@ public class Explore {
     boolean northCloser() {
         int yMin = robot.comms.readMapYMin();
         int yMax = robot.comms.readMapYMax();
-        if (yMin == -1 || yMax == -1) {
+        if (yMin == -1 && yMax == -1) {
             return robot.util.randomInt(2) < 1;
+        }
+
+        // If one of the bounds is unknown, go in that direction
+        if (yMin == -1 || yMax == -1) {
+            return yMin == -1;
         }
 
         return yMax - uc.getLocation().y <= uc.getLocation().y - yMin;
