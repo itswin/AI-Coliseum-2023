@@ -52,16 +52,20 @@ public class MicroPitcher {
             return false;
 
         MicroInfo[] microInfo = new MicroInfo[9];
-        for (int i = 0; i < 9; ++i)
+        int i = 9;
+        for (; --i >= 0;)
             microInfo[i] = new MicroInfo(dirs[i]);
 
         currentActionRadius = RANGE_BATTER;
         if (flee)
             currentActionRadius = RANGE_EXTENDED_BATTER;
 
-        for (UnitInfo unit : units) {
+        UnitInfo unit;
+        i = units.length;
+        for (; --i >= 0;) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;
+            unit = units[i];
             if (unit.getType() != UnitType.BATTER)
                 continue; // TODO: maybe add pitchers
             currentLoc = unit.getLocation();
@@ -78,12 +82,14 @@ public class MicroPitcher {
 
         MicroInfo bestMicro = microInfo[8];
         if (flee) {
-            for (int i = 0; i < 8; ++i) {
+            i = 8;
+            for (; --i >= 0;) {
                 if (microInfo[i].isBetterForFleeing(bestMicro))
                     bestMicro = microInfo[i];
             }
         } else {
-            for (int i = 0; i < 8; ++i) {
+            i = 8;
+            for (; --i >= 0;) {
                 if (microInfo[i].isBetter(bestMicro))
                     bestMicro = microInfo[i];
             }

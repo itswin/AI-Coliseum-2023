@@ -40,6 +40,7 @@ public class MicroBatter {
     double currentExtendedActionRadius;
     boolean canAttack;
     Location currentLoc;
+    UnitInfo currentUnit;
 
     boolean doMicro() {
         if (!uc.canMove())
@@ -54,13 +55,16 @@ public class MicroBatter {
             alwaysInRange = true;
 
         MicroInfo[] microInfo = new MicroInfo[9];
-        for (int i = 0; i < 9; ++i)
+        int i = 9;
+        for (; --i >= 0;)
             microInfo[i] = new MicroInfo(dirs[i]);
 
-        for (UnitInfo unit : units) {
+        i = units.length;
+        for (; --i >= 0;) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;
-            if (unit.getType() == UnitType.BATTER) {
+            currentUnit = units[i];
+            if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
             } else {
@@ -68,7 +72,7 @@ public class MicroBatter {
                 currentExtendedActionRadius = 0;
             }
 
-            currentLoc = unit.getLocation();
+            currentLoc = currentUnit.getLocation();
 
             microInfo[0].updateEnemy();
             microInfo[1].updateEnemy();
@@ -82,10 +86,12 @@ public class MicroBatter {
         }
 
         units = robot.allies;
-        for (UnitInfo unit : units) {
+        i = units.length;
+        for (; --i >= 0;) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;
-            if (unit.getType() == UnitType.BATTER) {
+            currentUnit = units[i];
+            if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
             } else {
@@ -93,7 +99,7 @@ public class MicroBatter {
                 currentExtendedActionRadius = 0;
             }
 
-            currentLoc = unit.getLocation();
+            currentLoc = currentUnit.getLocation();
 
             microInfo[0].updateAlly();
             microInfo[1].updateAlly();
@@ -107,7 +113,8 @@ public class MicroBatter {
         }
 
         MicroInfo bestMicro = microInfo[8];
-        for (int i = 0; i < 8; ++i) {
+        i = 8;
+        for (; --i >= 0;) {
             if (microInfo[i].isBetter(bestMicro))
                 bestMicro = microInfo[i];
         }
@@ -122,11 +129,18 @@ public class MicroBatter {
         if (uc.canMove(bestMicro.dir)) {
             robot.move(bestMicro.dir);
 
-            if (bestMicro.target != null) {
-                Location currLoc = uc.getLocation();
-                Direction dir = currLoc.directionTo(bestMicro.target);
+            if (bestMicro.enemyTarget != null) {
+                Direction dir = uc.getLocation().directionTo(bestMicro.enemyTarget);
                 if (uc.canBat(dir, 3)) {
                     uc.bat(dir, 3);
+                }
+            }
+
+            if (bestMicro.allyTarget != null) {
+                Direction dir = uc.getLocation().directionTo(bestMicro.allyTarget);
+                if (uc.canBat(dir, bestMicro.canBoostAlly)) {
+                    uc.schedule(bestMicro.allyId);
+                    uc.bat(dir, bestMicro.canBoostAlly);
                 }
             }
 
@@ -140,12 +154,15 @@ public class MicroBatter {
         Location location;
         int minDistanceToEnemy = INF;
 
-        int canLandHit = 0;
+        int canHitEnemy = 0;
         int battersAttackRange = 0;
         int battersVisionRange = 0;
         int possibleEnemybatters = 0;
         int minDistToAlly = INF;
-        Location target = null;
+        Location enemyTarget = null;
+        Location allyTarget = null;
+        int canBoostAlly = 0;
+        int allyId = 0;
         boolean canMove = true;
 
         public MicroInfo(Direction dir) {
@@ -175,8 +192,8 @@ public class MicroBatter {
             if (dist <= currentExtendedActionRadius)
                 possibleEnemybatters++;
             if (dist <= ACTION_RANGE && canAttack) {
-                canLandHit = 1;
-                target = currentLoc;
+                canHitEnemy = 1;
+                enemyTarget = currentLoc;
             }
         }
 
@@ -186,7 +203,34 @@ public class MicroBatter {
             int dist = currentLoc.distanceSquared(location);
             if (dist < minDistToAlly)
                 minDistToAlly = dist;
-            // if (dist <= 2) alliesTargeting += currentDMG;
+
+            // If the ally is adjacent to this location and we can schedule it,
+            // check how far we can bat it without hitting something.
+            if (dist <= 2 && uc.canSchedule(currentUnit.getID()) && uc.canAct()) {
+                int allyBoost = 0;
+                Direction allyDir = location.directionTo(currentLoc);
+                Location battedAllyLoc = currentLoc;
+                MapObject mapObj;
+                UnitInfo unitInfo;
+                while (allyBoost < 3) {
+                    battedAllyLoc = battedAllyLoc.add(allyDir);
+                    if (!uc.canSenseLocation(battedAllyLoc))
+                        break;
+                    mapObj = uc.senseObjectAtLocation(battedAllyLoc, true);
+                    if (mapObj == MapObject.WATER || mapObj == MapObject.BALL)
+                        break;
+                    unitInfo = uc.senseUnitAtLocation(battedAllyLoc);
+                    if (unitInfo != null) {
+                        break;
+                    }
+                    allyBoost++;
+                }
+                if (allyBoost > canBoostAlly) {
+                    canBoostAlly = allyBoost;
+                    allyTarget = battedAllyLoc;
+                    allyId = currentUnit.getID();
+                }
+            }
         }
 
         boolean inRange() {
@@ -206,24 +250,29 @@ public class MicroBatter {
             if (!canMove && M.canMove)
                 return false;
 
-            if (battersAttackRange - canLandHit < M.battersAttackRange - M.canLandHit)
+            if (battersAttackRange - canHitEnemy < M.battersAttackRange - M.canHitEnemy)
                 return true;
-            if (battersAttackRange - canLandHit > M.battersAttackRange - M.canLandHit)
+            if (battersAttackRange - canHitEnemy > M.battersAttackRange - M.canHitEnemy)
                 return false;
 
-            // if (battersVisionRange - canLandHit < M.battersVisionRange - M.canLandHit)
+            // if (battersVisionRange - canHitEnemy < M.battersVisionRange - M.canHitEnemy)
             // return true;
-            // if (battersVisionRange - canLandHit > M.battersVisionRange - M.canLandHit)
+            // if (battersVisionRange - canHitEnemy > M.battersVisionRange - M.canHitEnemy)
             // return false;
 
-            if (canLandHit > M.canLandHit)
+            if (canHitEnemy > M.canHitEnemy)
                 return true;
-            if (canLandHit < M.canLandHit)
+            if (canHitEnemy < M.canHitEnemy)
                 return false;
 
             if (possibleEnemybatters < M.possibleEnemybatters)
                 return true;
             if (possibleEnemybatters > M.possibleEnemybatters)
+                return false;
+
+            if (canBoostAlly > M.canBoostAlly)
+                return true;
+            if (canBoostAlly < M.canBoostAlly)
                 return false;
 
             // if (minDistToAlly < M.minDistToAlly)
