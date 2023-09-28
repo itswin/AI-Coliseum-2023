@@ -15,7 +15,7 @@ public class UnitPlayer {
                 robot.takeTurn();
                 robot.endTurn();
             } catch (Exception e) {
-                uc.println(uc.getType() + " Exception");
+                uc.println(uc.getType() + " Exception. Round: " + uc.getRound() + ". ID: " + uc.getInfo().getID());
                 e.printStackTrace();
                 reset(uc);
             }

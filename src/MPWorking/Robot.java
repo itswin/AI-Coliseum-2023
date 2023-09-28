@@ -57,26 +57,17 @@ public class Robot {
     public Robot(UnitController u) {
         uc = u;
 
+        fastMath = new FastMath(u);
+        debug = new Debug(u, this);
+        comms = new Comms(u, this);
+
         hq = null;
         if (uc.getType() == UnitType.HQ) {
             hq = uc.getLocation();
         } else {
-            for (UnitInfo loc : uc.senseUnits(2, uc.getTeam())) {
-                if (loc.getType() == UnitType.HQ) {
-                    hq = loc.getLocation();
-                    break;
-                }
-            }
-
-            if (hq == null) {
-                uc.println("ERROR: Did not find HQ!");
-                hq = uc.getLocation();
-            }
+            hq = comms.readHqLocation();
         }
 
-        fastMath = new FastMath(u);
-        debug = new Debug(u, this);
-        comms = new Comms(u, this);
         util = new Util(u, this);
         mapTracker = new MapTracker(u, this);
         explore = new Explore(u, this);

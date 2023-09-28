@@ -6,6 +6,7 @@ public class Hq extends Robot {
     final class HqStateEnum {
         public final int INIT = 0;
         public final int NORMAL = 1;
+        public final int DEFENSE = 2;
     }
 
     public final int NUM_INIT_BATTERS = 1;
@@ -34,6 +35,9 @@ public class Hq extends Robot {
         nextFlag = 0;
         loadExploreDirections();
         exploreDirIndex = 0;
+
+        comms.writeHqXCoord(uc.getLocation().x);
+        comms.writeHqYCoord(uc.getLocation().y);
     }
 
     public void loadExploreDirections() {
@@ -87,6 +91,14 @@ public class Hq extends Robot {
             if (numBatters >= NUM_INIT_BATTERS && numPitchers >= NUM_INIT_PITCHERS) {
                 state = HqState.NORMAL;
             }
+        } else if (state == HqState.NORMAL) {
+            if (enemies.length > 0) {
+                state = HqState.DEFENSE;
+            }
+        } else if (state == HqState.DEFENSE) {
+            if (enemies.length == 0) {
+                state = HqState.NORMAL;
+            }
         }
     }
 
@@ -95,6 +107,8 @@ public class Hq extends Robot {
             initAction();
         } else if (state == HqState.NORMAL) {
             normalAction();
+        } else if (state == HqState.DEFENSE) {
+            defendAction();
         }
     }
 
@@ -129,6 +143,24 @@ public class Hq extends Robot {
             exploreDirIndex++;
             exploreDirIndex %= exploreDirections.length;
             nextFlag = util.dirToFlag(dir);
+        }
+    }
+
+    public void defendAction() {
+        UnitType recruitType = UnitType.BATTER;
+
+        // Build 2 batters at a time if there are enemies around.
+        final int NUM_BATTERS_TO_BUILD = 2;
+        if (uc.getReputation() >= UnitType.BATTER.getStat(UnitStat.REP_COST) * NUM_BATTERS_TO_BUILD) {
+            for (int i = 0; i < NUM_BATTERS_TO_BUILD; i++) {
+                Direction dir = getNextBuildDir();
+                if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
+                    uc.recruitUnit(recruitType, dir);
+                    exploreDirIndex++;
+                    exploreDirIndex %= exploreDirections.length;
+                    nextFlag = util.dirToFlag(dir);
+                }
+            }
         }
     }
 

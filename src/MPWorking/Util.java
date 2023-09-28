@@ -375,7 +375,6 @@ public class Util {
         return Direction.ZERO;
     }
 
-    // TODO: Buggy
     boolean seesObstacleInWay(Location target) {
         Location loc = uc.getLocation();
         Direction dir = loc.directionTo(target);
@@ -384,6 +383,7 @@ public class Util {
             currLoc = currLoc.add(dir);
             if (!uc.canSenseLocation(currLoc) || (uc.senseObjectAtLocation(currLoc, false) == MapObject.WATER))
                 return true;
+            dir = currLoc.directionTo(target);
         }
         return false;
     }

@@ -84,14 +84,16 @@ public class MicroPitcher {
         if (flee) {
             i = 8;
             for (; --i >= 0;) {
-                if (microInfo[i].isBetterForFleeing(bestMicro))
+                if (microInfo[i].isBetterForFleeing(bestMicro)) {
                     bestMicro = microInfo[i];
+                }
             }
         } else {
             i = 8;
             for (; --i >= 0;) {
-                if (microInfo[i].isBetter(bestMicro))
+                if (microInfo[i].isBetter(bestMicro)) {
                     bestMicro = microInfo[i];
+                }
             }
         }
 
