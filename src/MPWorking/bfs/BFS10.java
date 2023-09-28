@@ -196,8 +196,6 @@ public class BFS10 {
         uc = r;
     }
 
-    private final Direction[] DIRECTIONS = new Direction[] {null, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.EAST, Direction.NORTH, Direction.WEST, Direction.SOUTH};
-
     public final Direction NORTH = Direction.NORTH;
     public final Direction NORTHEAST = Direction.NORTHEAST;
     public final Direction EAST = Direction.EAST;
@@ -207,6 +205,8 @@ public class BFS10 {
     public final Direction WEST = Direction.WEST;
     public final Direction NORTHWEST = Direction.NORTHWEST;
     public final Direction ZERO = Direction.ZERO;
+
+    private final Direction[] DIRECTIONS = new Direction[] {null, EAST, NORTH, WEST, SOUTH, NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHEAST};
 
     public double ans;
     public double bestScore;
@@ -404,28 +404,28 @@ public class BFS10 {
         if (uc.canSenseLocation(l96) && 
                 (mapObj = uc.senseObjectAtLocation(l96, true)) != MapObject.WATER &&
                 mapObj != MapObject.BALL) { 
-            d96 = 10 + Math.min(0.4375, Math.min(d111, d97));
+            d96 = 10 + Math.min(4.4375, Math.min(d111, d97));
         }
 
         // check (-1, 1)
         if (uc.canSenseLocation(l126) && 
                 (mapObj = uc.senseObjectAtLocation(l126, true)) != MapObject.WATER &&
                 mapObj != MapObject.BALL) { 
-            d126 = 10 + Math.min(0.375, Math.min(d111, d127));
+            d126 = 10 + Math.min(4.375, Math.min(d111, d127));
         }
 
         // check (1, -1)
         if (uc.canSenseLocation(l98) && 
                 (mapObj = uc.senseObjectAtLocation(l98, true)) != MapObject.WATER &&
                 mapObj != MapObject.BALL) { 
-            d98 = 10 + Math.min(0.5, Math.min(d97, d113));
+            d98 = 10 + Math.min(4.5, Math.min(d97, d113));
         }
 
         // check (1, 1)
         if (uc.canSenseLocation(l128) && 
                 (mapObj = uc.senseObjectAtLocation(l128, true)) != MapObject.WATER &&
                 mapObj != MapObject.BALL) { 
-            d128 = 10 + Math.min(0.3125, Math.min(d127, d113));
+            d128 = 10 + Math.min(4.3125, Math.min(d127, d113));
         }
 
         // check (-2, 0)
@@ -625,22 +625,22 @@ public class BFS10 {
         }
 
 
-        // System.out.println("LOCAL DISTANCES:");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d124 + "\t" + d125 + "\t" + d126 + "\t" + d127 + "\t" + d128 + "\t" + d129 + "\t" + d130 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d109 + "\t" + d110 + "\t" + d111 + "\t" + d112 + "\t" + d113 + "\t" + d114 + "\t" + d115 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + d94 + "\t" + d95 + "\t" + d96 + "\t" + d97 + "\t" + d98 + "\t" + d99 + "\t" + d100 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("DIRECTIONS:");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir124 + "\t" + dir125 + "\t" + dir126 + "\t" + dir127 + "\t" + dir128 + "\t" + dir129 + "\t" + dir130 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir109 + "\t" + dir110 + "\t" + dir111 + "\t" + dir112 + "\t" + dir113 + "\t" + dir114 + "\t" + dir115 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + dir94 + "\t" + dir95 + "\t" + dir96 + "\t" + dir97 + "\t" + dir98 + "\t" + dir99 + "\t" + dir100 + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + "\t" + "\t" + "\t" + "\t");
-        // System.out.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("LOCAL DISTANCES:");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d156 + "\t" + d157 + "\t" + d158 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d140 + "\t" + d141 + "\t" + d142 + "\t" + d143 + "\t" + d144 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + d124 + "\t" + d125 + "\t" + d126 + "\t" + d127 + "\t" + d128 + "\t" + d129 + "\t" + d130 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + d109 + "\t" + d110 + "\t" + d111 + "\t" + d112 + "\t" + d113 + "\t" + d114 + "\t" + d115 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + d94 + "\t" + d95 + "\t" + d96 + "\t" + d97 + "\t" + d98 + "\t" + d99 + "\t" + d100 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d80 + "\t" + d81 + "\t" + d82 + "\t" + d83 + "\t" + d84 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + d66 + "\t" + d67 + "\t" + d68 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("DIRECTIONS:");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir156 + "\t" + dir157 + "\t" + dir158 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir140 + "\t" + dir141 + "\t" + dir142 + "\t" + dir143 + "\t" + dir144 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + dir124 + "\t" + dir125 + "\t" + dir126 + "\t" + dir127 + "\t" + dir128 + "\t" + dir129 + "\t" + dir130 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + dir109 + "\t" + dir110 + "\t" + dir111 + "\t" + dir112 + "\t" + dir113 + "\t" + dir114 + "\t" + dir115 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + dir94 + "\t" + dir95 + "\t" + dir96 + "\t" + dir97 + "\t" + dir98 + "\t" + dir99 + "\t" + dir100 + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + "\t" + "\t" + "\t" + "\t");
+        // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
 
         if (target.distanceSquared(l112) <= 10) {
             int target_dx = target.x - l112.x;

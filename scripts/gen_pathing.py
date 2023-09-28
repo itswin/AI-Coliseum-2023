@@ -172,7 +172,7 @@ def gen_bfs(radius):
                     vals = []
                     for dx, dy in dxdy:
                         if encode(x+dx, y+dy) in visited:
-                            vals.append(str([1/16, 5/16, 2/16, 6/16, 3/16, 7/16, 4/16, 8/16][(round(atan2(-dy,-dx)/pi*4)+8)%8]) if (x+dx,y+dy) == (0, 0) else f'd{encode(x+dx,y+dy)}{"" if dx * dy == 0 else f" + 4"}')
+                            vals.append(str([1/16, 5/16, 2/16, 6/16, 3/16, 7/16, 4/16, 8/16][(round(atan2(-dy,-dx)/pi*4)+8)%8] + (0 if dx * dy == 0 else 4)) if (x+dx,y+dy) == (0, 0) else f'd{encode(x+dx,y+dy)}{"" if dx * dy == 0 else f" + 4"}')
                     out += f"""
         {indent}d{encode(x,y)} = 10 + {min_chain(vals)};"""
                     out += f"""
@@ -222,11 +222,11 @@ def gen_selection(radius, smaller_radius):
 
 def gen_print(radius):
     out = f"""
-        // System.out.println("LOCAL DISTANCES:");"""
+        // uc.println("LOCAL DISTANCES:");"""
     for y in range(7, -8, -1):
         if y**2 <= radius:
             out += f"""
-        // System.out.println("""
+        // uc.println("""
             for x in range(-7, 8):
                 if dist(x, y) <= radius:
                     out += f""""\\t" + d{encode(x,y)} + """
@@ -234,11 +234,11 @@ def gen_print(radius):
                     out += f""""\\t" + """
             out = out[:-3] + """);"""
     out += f"""
-        // System.out.println("DIRECTIONS:");"""
+        // uc.println("DIRECTIONS:");"""
     for y in range(7, -8, -1):
         if y**2 <= radius:
             out += f"""
-        // System.out.println("""
+        // uc.println("""
             for x in range(-7, 8):
                 if dist(x, y) <= radius:
                     out += f""""\\t" + dir{encode(x,y)} + """
@@ -265,8 +265,6 @@ public class BFS{rad} {{
         uc = r;
     }}
 
-    private final Direction[] DIRECTIONS = new Direction[] {{null, Direction.NORTHEAST, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.EAST, Direction.NORTH, Direction.WEST, Direction.SOUTH}};
-
     public final Direction NORTH = Direction.NORTH;
     public final Direction NORTHEAST = Direction.NORTHEAST;
     public final Direction EAST = Direction.EAST;
@@ -276,6 +274,8 @@ public class BFS{rad} {{
     public final Direction WEST = Direction.WEST;
     public final Direction NORTHWEST = Direction.NORTHWEST;
     public final Direction ZERO = Direction.ZERO;
+
+    private final Direction[] DIRECTIONS = new Direction[] {{null, EAST, NORTH, WEST, SOUTH, NORTHEAST, NORTHWEST, SOUTHWEST, SOUTHEAST}};
 
     public double ans;
     public double bestScore;
