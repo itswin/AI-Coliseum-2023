@@ -56,8 +56,8 @@ public class Batter extends Robot {
         if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
-        } else if ((visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null &&
-                uc.getRound() > ROUNDS_FOR_ONLY_STADIUM) {
+        } else if (uc.getRound() > ROUNDS_FOR_ONLY_STADIUM &&
+                (visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
             comms.logBase(visibleTarget);
             isTargetingBase = true;
         }
