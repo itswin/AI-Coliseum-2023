@@ -206,7 +206,8 @@ public class MicroBatter {
 
             // If the ally is adjacent to this location and we can schedule it,
             // check how far we can bat it without hitting something.
-            if (dist <= 2 && uc.canSchedule(currentUnit.getID()) && uc.canAct()) {
+            if (dist <= 2 && uc.canSchedule(currentUnit.getID()) && uc.canAct() &&
+                    currentUnit.getType() == UnitType.BATTER) {
                 int allyBoost = 0;
                 Direction allyDir = location.directionTo(currentLoc);
                 Location battedAllyLoc = currentLoc;

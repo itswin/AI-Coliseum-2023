@@ -5,6 +5,8 @@ import java.util.function.Predicate;
 import aic2023.user.*;
 
 public class Batter extends Robot {
+    final int ROUNDS_FOR_ONLY_STADIUM = 250;
+
     MicroBatter microBatter;
 
     public Batter(UnitController u) {
@@ -54,7 +56,8 @@ public class Batter extends Robot {
         if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
-        } else if ((visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
+        } else if ((visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null &&
+                uc.getRound() > ROUNDS_FOR_ONLY_STADIUM) {
             comms.logBase(visibleTarget);
             isTargetingBase = true;
         }
