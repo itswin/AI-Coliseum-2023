@@ -66,6 +66,17 @@ public class Batter extends Robot {
             target = visibleTarget;
         }
 
+        // Semi-solves race condition of multiple batters walking up to
+        // a target at the same time.
+        if (uc.canSenseLocation(target)) {
+            MapObject mapObj = uc.senseObjectAtLocation(target, false);
+            if (mapObj == MapObject.STADIUM) {
+                isTargetingStadium = true;
+            } else if (mapObj == MapObject.BASE) {
+                isTargetingBase = true;
+            }
+        }
+
         if (isExploring) {
             nav.move(target);
         } else {
