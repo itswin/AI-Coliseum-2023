@@ -1,0 +1,8 @@
+Avoid util
+Decreasing for loops (not for-each/increasing)
+Precompute
+Unroll for loops
+Inline function calls
+Store locals if reusing expressions
+
+Prints cost about 15 BC
