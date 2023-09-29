@@ -38,6 +38,8 @@ public class Hq extends Robot {
 
         comms.writeHqXCoord(uc.getLocation().x);
         comms.writeHqYCoord(uc.getLocation().y);
+
+        loadResources();
     }
 
     public void loadExploreDirections() {
@@ -189,6 +191,17 @@ public class Hq extends Robot {
         for (int i = comms.STADIUM_SLOTS; --i >= 0;) {
             comms.decrementStadiumPitcherHeartbeat(i);
             comms.decrementStadiumBatterHeartbeat(i);
+        }
+    }
+
+    public void loadResources() {
+        Location[] objects = uc.senseObjects(MapObject.BASE, VISION_RANGE);
+        for (Location base : objects) {
+            comms.logBase(base);
+        }
+        objects = uc.senseObjects(MapObject.STADIUM, VISION_RANGE);
+        for (Location stadium : objects) {
+            comms.logStadium(stadium);
         }
     }
 }

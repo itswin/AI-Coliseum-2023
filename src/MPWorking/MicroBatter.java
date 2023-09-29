@@ -43,7 +43,7 @@ public class MicroBatter {
     UnitInfo currentUnit;
 
     boolean doMicro() {
-        if (!uc.canMove())
+        if (!uc.canMove() && uc.senseUnits(2, null).length == 0)
             return false;
         UnitInfo[] units = robot.enemies;
         if (units.length == 0)
@@ -112,7 +112,27 @@ public class MicroBatter {
             microInfo[8].updateAlly();
         }
 
+        // If no movement is the best damage, attack first and then
+        // choose the best micro out of the remaining,
+        boolean isZeroBestAttack = true;
+        i = 8;
         MicroInfo bestMicro = microInfo[8];
+        if (canAttack) {
+            for (; --i >= 0;) {
+                if (microInfo[i].isBetterAttack(bestMicro)) {
+                    isZeroBestAttack = false;
+                    break;
+                }
+            }
+
+            if (isZeroBestAttack) {
+                applyAttack(bestMicro);
+                // Ignore the zero direction's attack scores
+                bestMicro.enemyDamageScore = 0;
+                bestMicro.allyBatStrength = 0;
+            }
+        }
+
         i = 8;
         for (; --i >= 0;) {
             if (microInfo[i].isBetter(bestMicro))
@@ -128,25 +148,28 @@ public class MicroBatter {
 
         if (uc.canMove(bestMicro.dir)) {
             robot.move(bestMicro.dir);
-
-            if (bestMicro.enemyTarget != null) {
-                Direction dir = uc.getLocation().directionTo(bestMicro.enemyTarget);
-                if (uc.canBat(dir, 3)) {
-                    uc.bat(dir, 3);
-                }
-            }
-
-            if (bestMicro.allyTarget != null) {
-                Direction dir = uc.getLocation().directionTo(bestMicro.allyTarget);
-                if (uc.canBat(dir, bestMicro.canBoostAlly)) {
-                    uc.schedule(bestMicro.allyId);
-                    uc.bat(dir, bestMicro.canBoostAlly);
-                }
-            }
-
+            applyAttack(bestMicro);
             return true;
         }
+
         return false;
+    }
+
+    void applyAttack(MicroInfo bestMicro) {
+        if (bestMicro.enemyTarget != null) {
+            Direction dir = uc.getLocation().directionTo(bestMicro.enemyTarget);
+            if (uc.canBat(dir, 3)) {
+                uc.bat(dir, 3);
+            }
+        }
+
+        if (bestMicro.allyTarget != null) {
+            Direction dir = uc.getLocation().directionTo(bestMicro.allyTarget);
+            if (uc.canBat(dir, bestMicro.allyBatStrength)) {
+                uc.schedule(bestMicro.allyId);
+                uc.bat(dir, bestMicro.allyBatStrength);
+            }
+        }
     }
 
     class MicroInfo {
@@ -155,14 +178,15 @@ public class MicroBatter {
         int minDistanceToEnemy = INF;
 
         float enemyDamageScore = 0;
-        int canHitEnemy = 0;
+        int enemyBatStrength = 0;
         int battersAttackRange = 0;
         int battersVisionRange = 0;
         int possibleEnemybatters = 0;
         int minDistToAlly = INF;
         Location enemyTarget = null;
         Location allyTarget = null;
-        int canBoostAlly = 0;
+        float allyDamageScore = 0;
+        int allyBatStrength = 0;
         int allyId = 0;
         boolean canMove = true;
 
@@ -205,11 +229,17 @@ public class MicroBatter {
                 do {
                     battedEnemyLoc = battedEnemyLoc.add(enemyDir);
                     if (!uc.canSenseLocation(battedEnemyLoc)) {
-                        // Count this as a kill, this could be either batting
-                        // outside my vision radius, or out of the map.
-                        // This feasibly could hit one of our own units, but
-                        // I'm accepting that risk.
-                        damageScore = currentUnit.getType().getStat(UnitStat.REP_COST);
+                        // If this is within my vision radius,
+                        // then it's out of the map and it's a kill.
+                        if (uc.getLocation().distanceSquared(battedEnemyLoc) <= VISION_RANGE) {
+                            damageScore = currentUnit.getType().getStat(UnitStat.REP_COST);
+                        } else {
+                            damageScore = currentUnit.getType().getStat(UnitStat.REP_COST) / 2;
+                        }
+                        // Otherwise we don't know what happens to this unit,
+                        // so only give it half of the reward.
+                        // This feasibly could hit one of our own units,
+                        // but I'm accepting that risk.
                         batStrength++;
                         break;
                     }
@@ -250,7 +280,7 @@ public class MicroBatter {
                 damageScore += batStrength;
                 if (damageScore > enemyDamageScore) {
                     enemyDamageScore = damageScore;
-                    canHitEnemy = batStrength;
+                    enemyBatStrength = batStrength;
                     enemyTarget = currentLoc;
                 }
             }
@@ -264,10 +294,12 @@ public class MicroBatter {
                 minDistToAlly = dist;
 
             // If the ally is adjacent to this location and we can schedule it,
-            // check how far we can bat it without hitting something.
-            if (dist <= 2 && uc.canSchedule(currentUnit.getID()) && uc.canAct() &&
-                    currentUnit.getType() == UnitType.BATTER) {
-                int allyBoost = 0;
+            // calculate a score based on potential damage dealt to the enemy.
+            int currentUnitID = currentUnit.getID();
+            if (dist <= 2 && uc.canSchedule(currentUnitID) &&
+                    uc.canAct() && currentUnit.getType() == UnitType.BATTER) {
+                float damageScore;
+                int batStrength = 0;
                 Direction allyDir = location.directionTo(currentLoc);
                 Location battedAllyLoc = currentLoc;
                 MapObject mapObj;
@@ -282,14 +314,45 @@ public class MicroBatter {
                     unitInfo = uc.senseUnitAtLocation(battedAllyLoc);
                     if (unitInfo != null)
                         break;
-                    allyBoost++;
-                } while (allyBoost < GameConstants.MAX_STRENGTH);
+                    batStrength++;
 
-                if (allyBoost > canBoostAlly) {
-                    canBoostAlly = allyBoost;
-                    allyTarget = battedAllyLoc;
-                    allyId = currentUnit.getID();
-                }
+                    // Calculate score here. If we broke out before this,
+                    // we don't want to use this loops strength.
+                    damageScore = batStrength;
+
+                    // Loop through all adjacent units. Scoring is kind of
+                    // speculative, we give more points to being cardinally
+                    // adjacent to a unit because that gives the unit more
+                    // squares it can move to adjacent to it when it does
+                    // its own micro. Note that we don't distinguish between
+                    // allies and enemies here.
+                    Location adjLoc;
+                    // 8 ignores Direction.ZERO
+                    for (int i = 8; --i >= 0;) {
+                        adjLoc = battedAllyLoc.add(dirs[i]);
+                        if (!uc.canSenseLocation(adjLoc))
+                            continue;
+                        unitInfo = uc.senseUnitAtLocation(adjLoc);
+                        if (unitInfo == null || unitInfo.getID() == currentUnitID)
+                            continue;
+                        // even indices in dirs are cardinal directions
+                        if (i % 2 == 0) {
+                            damageScore += 5;
+                        } else {
+                            damageScore += 3;
+                        }
+                    }
+
+                    robot.debug.println(
+                            "Damage score: " + damageScore + " for " + currentUnitID + " at " + currentLoc
+                                    + " batting " + allyDir + " from " + location + " with strength " + batStrength);
+                    if (damageScore > allyDamageScore) {
+                        allyBatStrength = batStrength;
+                        allyDamageScore = damageScore;
+                        allyTarget = currentLoc;
+                        allyId = currentUnitID;
+                    }
+                } while (batStrength < GameConstants.MAX_STRENGTH);
             }
         }
 
@@ -316,19 +379,14 @@ public class MicroBatter {
             if (battersAttackRange > M.battersAttackRange)
                 return false;
 
-            // if (battersVisionRange - canHitEnemy < M.battersVisionRange - M.canHitEnemy)
-            // return true;
-            // if (battersVisionRange - canHitEnemy > M.battersVisionRange - M.canHitEnemy)
-            // return false;
-
             if (possibleEnemybatters < M.possibleEnemybatters)
                 return true;
             if (possibleEnemybatters > M.possibleEnemybatters)
                 return false;
 
-            if (canBoostAlly > M.canBoostAlly)
+            if (allyDamageScore > M.allyDamageScore)
                 return true;
-            if (canBoostAlly < M.canBoostAlly)
+            if (allyDamageScore < M.allyDamageScore)
                 return false;
 
             // if (minDistToAlly < M.minDistToAlly)
@@ -340,6 +398,15 @@ public class MicroBatter {
                 return minDistanceToEnemy >= M.minDistanceToEnemy;
             else
                 return minDistanceToEnemy <= M.minDistanceToEnemy;
+        }
+
+        boolean isBetterAttack(MicroInfo M) {
+            if (enemyDamageScore > M.enemyDamageScore)
+                return true;
+            if (enemyDamageScore < M.enemyDamageScore)
+                return false;
+
+            return allyDamageScore > M.allyDamageScore;
         }
     }
 }
