@@ -94,11 +94,11 @@ public class Hq extends Robot {
                 state = HqState.NORMAL;
             }
         } else if (state == HqState.NORMAL) {
-            if (enemies.length > 0) {
+            if (roundSeenEnemyBatter == uc.getRound()) {
                 state = HqState.DEFENSE;
             }
         } else if (state == HqState.DEFENSE) {
-            if (enemies.length == 0) {
+            if (roundSeenEnemyBatter != uc.getRound()) {
                 state = HqState.NORMAL;
             }
         }
