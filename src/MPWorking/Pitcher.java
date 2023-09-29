@@ -6,6 +6,7 @@ import aic2023.user.*;
 
 public class Pitcher extends Robot {
     final int ROUNDS_FOR_ONLY_STADIUM = 250;
+    final int ROUNDS_FOR_ONLY_BASES = 1400;
 
     MicroPitcher microPitcher;
 
@@ -39,8 +40,13 @@ public class Pitcher extends Robot {
             targetType = TargetType.EXPLORE;
             justStartedExploring = true;
         } else if (targetType == TargetType.EXPLORE) {
-            targetType = TargetType.STADIUM;
-            commsStadiumIndex = 0;
+            if (uc.getRound() >= ROUNDS_FOR_ONLY_BASES) {
+                targetType = TargetType.BASE;
+                commsBaseIndex = 0;
+            } else {
+                targetType = TargetType.STADIUM;
+                commsStadiumIndex = 0;
+            }
         }
     }
 
@@ -66,7 +72,8 @@ public class Pitcher extends Robot {
         Location visibleTarget = null;
         boolean isTargetingBase = false;
         boolean isTargetingStadium = false;
-        if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
+        if (uc.getRound() < ROUNDS_FOR_ONLY_BASES &&
+                (visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
         } else if (uc.getRound() > ROUNDS_FOR_ONLY_STADIUM &&
@@ -122,7 +129,8 @@ public class Pitcher extends Robot {
         if (targetType == TargetType.BASE) {
             return !comms.isBasePitcherHeartbeatDead(commsBaseIndex);
         } else if (targetType == TargetType.STADIUM) {
-            return !comms.isStadiumPitcherHeartbeatDead(commsStadiumIndex);
+            return !comms.isStadiumPitcherHeartbeatDead(commsStadiumIndex) ||
+                    uc.getRound() >= ROUNDS_FOR_ONLY_BASES;
         }
 
         return false;

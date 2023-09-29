@@ -149,6 +149,18 @@ public class Hq extends Robot {
     }
 
     public void defendAction() {
+        // CloseHQs doesn't build any pitchers without this lol.
+        if (numPitchers < 1) {
+            UnitType recruitType = UnitType.PITCHER;
+            Direction dir = getNextBuildDir();
+            if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
+                uc.recruitUnit(recruitType, dir);
+                exploreDirIndex++;
+                exploreDirIndex %= exploreDirections.length;
+                nextFlag = util.dirToFlag(dir);
+            }
+        }
+
         UnitType recruitType = UnitType.BATTER;
 
         // Build 2 batters at a time if there are enemies around.

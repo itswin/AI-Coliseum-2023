@@ -343,9 +343,6 @@ public class MicroBatter {
                         }
                     }
 
-                    robot.debug.println(
-                            "Damage score: " + damageScore + " for " + currentUnitID + " at " + currentLoc
-                                    + " batting " + allyDir + " from " + location + " with strength " + batStrength);
                     if (damageScore > allyDamageScore) {
                         allyBatStrength = batStrength;
                         allyDamageScore = damageScore;
