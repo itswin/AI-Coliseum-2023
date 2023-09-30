@@ -63,7 +63,13 @@ SCHEMA = {
             'catchers',
             'catchers_last',
         ]
-    }
+    },
+    'shared_map': {
+        'slots': (2 * 60 + 1) ** 2,
+        'fields': [
+            'tile_type',
+        ]
+    },
 }
 
 def capitalize(s):
@@ -104,7 +110,18 @@ def gen():
     }}
 """
             else:
-                out += f"""
+                if datatype == 'shared_map':
+                    out += f"""
+    public int read{capitalize(datatype)}{capitalize(field)}(Location mapLoc) {{
+        return uc.read({fields_so_far} + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY));
+    }}
+
+    public void write{capitalize(datatype)}{capitalize(field)}(Location mapLoc, int value) {{
+        uc.write({fields_so_far} + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY), value);
+    }}
+"""
+                else:
+                    out += f"""
     public int read{capitalize(datatype)}{capitalize(field)}(int slot) {{
         return uc.read({fields_so_far} + slot);
     }}

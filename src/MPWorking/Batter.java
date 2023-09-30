@@ -1,6 +1,6 @@
 package MPWorking;
 
-import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 import aic2023.user.*;
 
@@ -32,28 +32,31 @@ public class Batter extends Robot {
 
     public void moveToTarget() {
         // None of our batters around the location
-        Predicate<Location> availablePred = (loc) -> {
+        ToDoubleFunction<Location> pred = (loc) -> {
             Location[] adjLocs = util.getAdjLocs(loc);
+            double score = 100;
             for (Location adjLoc : adjLocs) {
                 UnitInfo unit = uc.senseUnitAtLocation(adjLoc);
                 if (unit != null &&
                         unit.getTeam() == uc.getTeam() &&
                         unit.getType() == UnitType.BATTER &&
                         unit.getID() != uc.getInfo().getID()) {
-                    return false;
+                    return -1;
                 }
             }
-            return true;
+
+            score -= Math.sqrt(hq.distanceSquared(loc));
+            return score;
         };
         Location visibleTarget = null;
         boolean isExploring = false;
         boolean isTargetingBase = false;
         boolean isTargetingStadium = false;
-        if ((visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
+        if ((visibleTarget = getBestMapObj(MapObject.STADIUM, pred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
         } else if (uc.getRound() > ROUNDS_FOR_ONLY_STADIUM &&
-                (visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
+                (visibleTarget = getBestMapObj(MapObject.BASE, pred)) != null) {
             comms.logBase(visibleTarget);
             isTargetingBase = true;
         }

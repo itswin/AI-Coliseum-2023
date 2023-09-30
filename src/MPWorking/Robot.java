@@ -2,7 +2,7 @@ package MPWorking;
 
 import aic2023.user.*;
 
-import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 import MPWorking.fast.*;
 
@@ -68,6 +68,8 @@ public class Robot {
             hq = comms.readHqLocation();
         }
 
+        comms.loadMapOffset();
+
         util = new Util(u, this);
         mapTracker = new MapTracker(u, this);
         explore = new Explore(u, this);
@@ -119,8 +121,8 @@ public class Robot {
         mapTracker.markSeen();
     }
 
-    public Location getClosestMapObj(MapObject mapObj, Predicate<Location> pred) {
-        return util.getClosestLoc(uc.senseObjects(mapObj, VISION_RANGE), pred);
+    public Location getBestMapObj(MapObject mapObj, ToDoubleFunction<Location> pred) {
+        return util.getBestLoc(uc.senseObjects(mapObj, VISION_RANGE), pred);
     }
 
     public boolean shouldLoadNextTarget() {

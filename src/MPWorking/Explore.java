@@ -21,6 +21,7 @@ public class Explore {
 
     int turnSetExploreTarget = -1;
     int EXPLORE_TARGET_TIMEOUT = 100;
+    final int EXPLORE_MORE_ROUNDS = 500;
 
     public Explore(UnitController u, Robot r) {
         uc = u;
@@ -39,6 +40,19 @@ public class Explore {
 
         // Should not happen
         return false;
+    }
+
+    public boolean isExtendedExploreDirVisited(Direction dir) {
+        Location loc;
+        if (robot.util.isCardinalDirection(dir)) {
+            loc = robot.util.clipToKnownBounds(uc.getLocation().add(dir.dx * 8, dir.dy * 8));
+        } else if (robot.util.isDiagonalDirection(dir)) {
+            loc = robot.util.clipToKnownBounds(uc.getLocation().add(dir.dx * 6, dir.dy * 6));
+        } else {
+            return false;
+        }
+
+        return robot.mapTracker.hasVisited(loc);
     }
 
     void initExploreDir() {
@@ -115,6 +129,14 @@ public class Explore {
             if (explore3Target.distanceSquared(uc.getLocation()) <= visionRadius) {
                 assignExplore3Dir(exploreDir);
             }
+
+            // Someone else visited this target
+            if (robot.mapTracker.hasVisited(explore3Target)) {
+                // Consider changing exploreDir if it's early in the game.
+                if (isExtendedExploreDirVisited(exploreDir) && uc.getRound() < EXPLORE_MORE_ROUNDS) {
+                    changeExploreDir();
+                }
+            }
             return;
         }
 
@@ -124,6 +146,10 @@ public class Explore {
         }
 
         // System.err.println("Checking new direction!");
+        changeExploreDir();
+    }
+
+    public void changeExploreDir() {
         if (robot.util.isDiagonalDirection(exploreDir)) {
             getClosestExplore3Direction();
         } else if (exploreDir == Direction.NORTH || exploreDir == Direction.SOUTH) {

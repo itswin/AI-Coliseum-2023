@@ -1,6 +1,6 @@
 package MPWorking;
 
-import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 import aic2023.user.*;
 
@@ -450,21 +450,19 @@ public class Util {
         return bestLoc;
     }
 
-    Location getClosestLoc(Location[] locs, Predicate<Location> pred) {
+    // Note: Ignores locs that give negative score.
+    Location getBestLoc(Location[] locs, ToDoubleFunction<Location> pred) {
         int idx;
         Location loc = null;
-        Location currLoc = uc.getLocation();
-        int bestDist = Integer.MAX_VALUE;
         Location bestLoc = null;
-        int dist;
+        double bestValue = 0;
+        double value;
         for (idx = locs.length; --idx >= 0;) {
             loc = locs[idx];
-            dist = currLoc.distanceSquared(loc);
-            if (pred.test(loc)) {
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestLoc = loc;
-                }
+            value = pred.applyAsDouble(loc);
+            if (value > bestValue) {
+                bestValue = value;
+                bestLoc = loc;
             }
         }
         return bestLoc;

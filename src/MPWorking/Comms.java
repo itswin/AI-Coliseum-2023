@@ -7,6 +7,12 @@ public class Comms {
     private UnitController uc;
     private Robot robot;
 
+    final int SHARED_MAP_SIZE = 121;
+    final int MAP_SIZE = 60;
+
+    int mapOffsetX = 0;
+    int mapOffsetY = 0;
+
     final public class HqFlagsEnum {
         public int UNKNOWN_FLAG = 0;
         public int EXPLORE_NORTH = 1;
@@ -27,10 +33,16 @@ public class Comms {
     public final int BASE_SLOTS = 16;
     public final int STADIUM_SLOTS = 16;
     public final int NUM_SLOTS = 1;
+    public final int SHARED_MAP_SLOTS = 14641;
 
     public Comms(UnitController u, Robot r) {
         uc = u;
         robot = r;
+    }
+
+    public void loadMapOffset() {
+        mapOffsetX = MAP_SIZE - robot.hq.x;
+        mapOffsetY = MAP_SIZE - robot.hq.y;
     }
 
     public Location readHqLocation() {
@@ -428,6 +440,14 @@ public class Comms {
 
     public void writeNumCatchersLast(int value) {
         uc.write(145, value);
+    }
+
+    public int readSharedMapTileType(Location mapLoc) {
+        return uc.read(146 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY));
+    }
+
+    public void writeSharedMapTileType(Location mapLoc, int value) {
+        uc.write(146 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY), value);
     }
 
 }

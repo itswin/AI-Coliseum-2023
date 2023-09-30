@@ -7,6 +7,12 @@ public class Comms {
     private UnitController uc;
     private Robot robot;
 
+    final int SHARED_MAP_SIZE = 121;
+    final int MAP_SIZE = 60;
+
+    int mapOffsetX = 0;
+    int mapOffsetY = 0;
+
     final public class HqFlagsEnum {
         public int UNKNOWN_FLAG = 0;
         public int EXPLORE_NORTH = 1;
@@ -25,6 +31,11 @@ public class Comms {
     public Comms(UnitController u, Robot r) {
         uc = u;
         robot = r;
+    }
+
+    public void loadMapOffset() {
+        mapOffsetX = MAP_SIZE - robot.hq.x;
+        mapOffsetY = MAP_SIZE - robot.hq.y;
     }
 
     public Location readHqLocation() {

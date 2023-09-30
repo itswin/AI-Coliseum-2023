@@ -189,7 +189,7 @@ public class Nav {
             robot.pathfinding.move(target);
         } else {
             robot.debug.setIndicatorDot(true, uc.getLocation(), 255, 255, 255);
-            robot.debug.println("Didn't have enough BC");
+            // robot.debug.println("Didn't have enough BC");
         }
     }
 }

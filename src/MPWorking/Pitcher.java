@@ -1,6 +1,6 @@
 package MPWorking;
 
-import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 import aic2023.user.*;
 
@@ -62,22 +62,29 @@ public class Pitcher extends Robot {
             }
         }
 
-        Predicate<Location> availablePred = (loc) -> {
+        ToDoubleFunction<Location> pred = (loc) -> {
             UnitInfo unit = uc.senseUnitAtLocation(loc);
-            return unit == null ||
-                    unit.getTeam() != uc.getTeam() ||
-                    uc.getType() != UnitType.PITCHER ||
-                    unit.getID() == uc.getInfo().getID();
+            double score = 0;
+            if (unit == null || unit.getID() == uc.getInfo().getID()) {
+                score += 200;
+            } else if (unit.getTeam() != uc.getTeam()) {
+                score += 100;
+            } else {
+                score = -100;
+            }
+
+            score -= Math.sqrt(hq.distanceSquared(loc));
+            return score;
         };
         Location visibleTarget = null;
         boolean isTargetingBase = false;
         boolean isTargetingStadium = false;
         if (uc.getRound() < ROUNDS_FOR_ONLY_BASES &&
-                (visibleTarget = getClosestMapObj(MapObject.STADIUM, availablePred)) != null) {
+                (visibleTarget = getBestMapObj(MapObject.STADIUM, pred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
         } else if (uc.getRound() > ROUNDS_FOR_ONLY_STADIUM &&
-                (visibleTarget = getClosestMapObj(MapObject.BASE, availablePred)) != null) {
+                (visibleTarget = getBestMapObj(MapObject.BASE, pred)) != null) {
             util.logBaseAndReflection(visibleTarget);
             isTargetingBase = true;
         }

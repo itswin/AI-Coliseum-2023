@@ -30,8 +30,6 @@ public class MapTracker {
     final int MAX_MAP_SIZE_SQ = MAX_MAP_SIZE * MAX_MAP_SIZE;
     final int MAX_MAP_SIZE2 = 2 * MAX_MAP_SIZE;
 
-    int[][] tileType = new int[MAX_MAP_SIZE2 + 1][];
-
     int visionRadius;
     boolean initialized;
     int initRow;
@@ -52,23 +50,24 @@ public class MapTracker {
     }
 
     void visit(Location loc) {
-        int[] indices = robot.util.getMapIndices(loc);
         UnitInfo info = uc.senseUnitAtLocation(loc);
         if (info != null && info.getType() == UnitType.HQ) {
-            tileType[indices[0]][indices[1]] = info.getTeam() == uc.getTeam() ? TileType.FRIENDLY_HQ
-                    : TileType.ENEMY_HQ;
+            robot.comms.writeSharedMapTileType(loc,
+                    info.getTeam() == uc.getTeam()
+                            ? TileType.FRIENDLY_HQ
+                            : TileType.ENEMY_HQ);
             return;
         }
 
         MapObject mapObj = uc.senseObjectAtLocation(loc, false);
         if (mapObj == MapObject.GRASS) {
-            tileType[indices[0]][indices[1]] = TileType.BASE;
+            robot.comms.writeSharedMapTileType(loc, TileType.GRASS);
         } else if (mapObj == MapObject.WATER) {
-            tileType[indices[0]][indices[1]] = TileType.WATER;
+            robot.comms.writeSharedMapTileType(loc, TileType.WATER);
         } else if (mapObj == MapObject.BASE) {
-            tileType[indices[0]][indices[1]] = TileType.BASE;
+            robot.comms.writeSharedMapTileType(loc, TileType.BASE);
         } else if (mapObj == MapObject.STADIUM) {
-            tileType[indices[0]][indices[1]] = TileType.STADIUM;
+            robot.comms.writeSharedMapTileType(loc, TileType.STADIUM);
         } else {
             robot.debug.println("Error: Found invalid map object: " + mapObj);
         }
@@ -98,15 +97,12 @@ public class MapTracker {
             return tile1 == tile2;
         };
 
-        int[] indices = robot.util.getMapIndices(loc);
         Location reflectedLoc;
-        int tile1 = tileType[indices[0]][indices[1]];
+        int tile1 = robot.comms.readSharedMapTileType(loc);
         int tile2;
-        int[] reflectedIndices;
         if (vertSym == 1) {
             reflectedLoc = robot.util.reflectVertical(loc);
-            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
-            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            tile2 = robot.comms.readSharedMapTileType(reflectedLoc);
             if (!isReflectedTile.test(tile1, tile2)) {
                 robot.comms.writeSymmetryVertical(0);
                 robot.debug.println("Invalidated vertical symmetry");
@@ -115,8 +111,7 @@ public class MapTracker {
 
         if (horizSym == 1) {
             reflectedLoc = robot.util.reflectHorizontal(loc);
-            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
-            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            tile2 = robot.comms.readSharedMapTileType(reflectedLoc);
             if (!isReflectedTile.test(tile1, tile2)) {
                 robot.comms.writeSymmetryHorizontal(0);
                 robot.debug.println("Invalidated horizontal symmetry");
@@ -125,8 +120,7 @@ public class MapTracker {
 
         if (rotSym == 1) {
             reflectedLoc = robot.util.reflectRotational(loc);
-            reflectedIndices = robot.util.getMapIndices(reflectedLoc);
-            tile2 = tileType[reflectedIndices[0]][reflectedIndices[1]];
+            tile2 = robot.comms.readSharedMapTileType(reflectedLoc);
             if (!isReflectedTile.test(tile1, tile2)) {
                 robot.comms.writeSymmetryRotational(0);
                 robot.debug.println("Invalidated rotational symmetry");
@@ -139,19 +133,17 @@ public class MapTracker {
             return;
 
         Location loc = uc.getLocation();
-        int[] indices;
         for (int i = dirPath.length; i-- > 0;) {
             if (uc.getEnergyLeft() < VISITED_BC_LEFT)
                 break;
             loc = loc.add(dirPath[i]);
-            indices = robot.util.getMapIndices(loc);
-            if (tileType[indices[0]][indices[1]] == TileType.UNKNOWN) {
+            if (robot.comms.readSharedMapTileType(loc) == TileType.UNKNOWN) {
                 if (uc.canSenseLocation(loc)) {
                     visit(loc);
                     invalidateSymmetries(loc);
                 } else if (uc.isOutOfMap(loc)) {
                     robot.util.updateMapBounds(loc);
-                    tileType[indices[0]][indices[1]] = TileType.OUT_OF_BOUNDS;
+                    robot.comms.writeSharedMapTileType(loc, TileType.OUT_OF_BOUNDS);
                 }
             }
         }
@@ -160,20 +152,15 @@ public class MapTracker {
     boolean hasVisited(Location loc) {
         if (!initialized)
             return false;
-        int[] indices = robot.util.getMapIndices(loc);
-        return tileType[indices[0]][indices[1]] != TileType.UNKNOWN;
+        return robot.comms.readSharedMapTileType(loc) != TileType.UNKNOWN;
     }
 
     void initialize() {
         if (initialized)
             return;
 
-        while (initRow < tileType.length) {
-            if (uc.getEnergyLeft() < INIT_BC_LEFT)
-                return;
-            tileType[initRow] = new int[MAX_MAP_SIZE2 + 1];
-            initRow++;
-        }
+        // No arrays to initialize anymore!
+
         initialized = true;
     }
 
@@ -194,13 +181,14 @@ public class MapTracker {
                     Direction.SOUTH, Direction.SOUTH, Direction.WEST, Direction.WEST, Direction.WEST,
                     Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.EAST,
                     Direction.SOUTH, Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.ZERO };
-        } else {
-            dirPath = new Direction[] { Direction.NORTHWEST, Direction.NORTHWEST, Direction.NORTHWEST,
+        } else if (visionRadius == 32) {
+            dirPath = new Direction[] { Direction.NORTHWEST, Direction.WEST, Direction.NORTH, Direction.NORTHWEST,
                     Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHEAST,
-                    Direction.NORTHEAST, Direction.NORTHEAST, Direction.EAST, Direction.EAST, Direction.EAST,
-                    Direction.EAST, Direction.SOUTHEAST, Direction.SOUTHEAST, Direction.SOUTHEAST, Direction.SOUTH,
-                    Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTHWEST,
-                    Direction.SOUTHWEST, Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTHWEST,
+                    Direction.NORTH, Direction.EAST, Direction.NORTHEAST, Direction.EAST, Direction.EAST,
+                    Direction.EAST, Direction.EAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTH,
+                    Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH,
+                    Direction.SOUTHWEST, Direction.SOUTH, Direction.WEST, Direction.SOUTHWEST, Direction.WEST,
+                    Direction.WEST, Direction.WEST, Direction.NORTHWEST,
                     Direction.NORTHWEST, Direction.NORTHWEST, Direction.NORTH, Direction.NORTH, Direction.NORTH,
                     Direction.NORTH, Direction.NORTHEAST, Direction.NORTHEAST, Direction.EAST, Direction.EAST,
                     Direction.EAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTHEAST, Direction.SOUTH,
@@ -215,6 +203,54 @@ public class MapTracker {
                     Direction.SOUTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTH,
                     Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.EAST, Direction.SOUTH,
                     Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.ZERO };
+        } else if (visionRadius == 64) {
+            dirPath = new Direction[] {
+                    Direction.WEST, Direction.NORTHWEST, Direction.NORTH, Direction.NORTHWEST,
+                    Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.WEST,
+                    Direction.NORTHEAST, Direction.NORTH, Direction.NORTH, Direction.NORTHEAST, Direction.NORTH,
+                    Direction.NORTHEAST, Direction.EAST, Direction.NORTHEAST,
+                    Direction.EAST, Direction.EAST, Direction.EAST, Direction.NORTH,
+                    Direction.SOUTHEAST, Direction.EAST, Direction.EAST, Direction.SOUTHEAST, Direction.EAST,
+                    Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHEAST,
+                    Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.EAST,
+                    Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTH,
+                    Direction.SOUTHWEST, Direction.SOUTH,
+                    Direction.SOUTHWEST, Direction.WEST, Direction.SOUTHWEST,
+                    Direction.WEST, Direction.WEST, Direction.WEST, Direction.SOUTH,
+                    Direction.NORTHWEST, Direction.WEST, Direction.WEST,
+                    Direction.NORTH, Direction.NORTH, Direction.WEST, Direction.WEST,
+                    Direction.NORTH, Direction.NORTH, Direction.WEST, Direction.NORTH,
+                    Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH,
+                    Direction.EAST, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.EAST, Direction.NORTH,
+                    Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST,
+                    Direction.SOUTH, Direction.EAST, Direction.EAST, Direction.SOUTH, Direction.SOUTH, Direction.EAST,
+                    Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH,
+                    Direction.SOUTH, Direction.WEST, Direction.SOUTH, Direction.SOUTH,
+                    Direction.WEST, Direction.WEST, Direction.SOUTH, Direction.WEST,
+                    Direction.WEST, Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTH,
+                    Direction.NORTHWEST, Direction.WEST, Direction.NORTH, Direction.NORTHWEST,
+                    Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHEAST,
+                    Direction.NORTH, Direction.EAST, Direction.NORTHEAST, Direction.EAST, Direction.EAST,
+                    Direction.EAST, Direction.EAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTH,
+                    Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH,
+                    Direction.SOUTHWEST, Direction.SOUTH, Direction.WEST, Direction.SOUTHWEST, Direction.WEST,
+                    Direction.WEST, Direction.WEST, Direction.NORTHWEST,
+                    Direction.NORTHWEST, Direction.NORTHWEST, Direction.NORTH, Direction.NORTH, Direction.NORTH,
+                    Direction.NORTH, Direction.NORTHEAST, Direction.NORTHEAST, Direction.EAST, Direction.EAST,
+                    Direction.EAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTHEAST, Direction.SOUTH,
+                    Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTHWEST,
+                    Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTHWEST, Direction.NORTHWEST,
+                    Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.NORTHEAST,
+                    Direction.EAST, Direction.EAST, Direction.EAST, Direction.EAST, Direction.SOUTHEAST,
+                    Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH, Direction.SOUTHWEST,
+                    Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTHWEST, Direction.NORTH,
+                    Direction.NORTH, Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.EAST,
+                    Direction.EAST, Direction.EAST, Direction.SOUTH, Direction.SOUTH, Direction.SOUTH,
+                    Direction.SOUTH, Direction.WEST, Direction.WEST, Direction.WEST, Direction.NORTH,
+                    Direction.NORTH, Direction.NORTH, Direction.EAST, Direction.EAST, Direction.SOUTH,
+                    Direction.SOUTH, Direction.WEST, Direction.NORTH, Direction.ZERO };
+        } else {
+            robot.debug.println("Error: Invalid vision radius: " + visionRadius);
         }
     }
 }
