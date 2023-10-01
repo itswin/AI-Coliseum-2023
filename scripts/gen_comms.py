@@ -70,6 +70,12 @@ SCHEMA = {
             'tile_type',
         ]
     },
+    'schedule': {
+        'slots': 32,
+        'fields': [
+            'id',
+        ]
+    },
 }
 
 def capitalize(s):
@@ -200,7 +206,7 @@ def gen_init_method_calls():
     out = """"""
     for datatype in SCHEMA:
         if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
-            out += f"""            init{capitalize(datatype)}();
+            out += f"""        init{capitalize(datatype)}();
 """
     return out
 

@@ -80,8 +80,16 @@ public class Comms {
     public boolean isExploreDirFlag(int flag) {
         return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }
-    // INIT LOC METHODS
 
+    public void scheduleId(int id) {
+        int slot = -1;
+        for (; ++slot < SCHEDULE_SLOTS;) {
+            if (readScheduleId(slot) == -1) {
+                writeScheduleId(slot, id);
+            }
+        }
+    }
+    // INIT LOC METHODS
     // MAIN READ AND WRITE METHODS
 
 }

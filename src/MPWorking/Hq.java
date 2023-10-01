@@ -77,6 +77,7 @@ public class Hq extends Robot {
         comms.resetUnitCount();
 
         decrementHeartbeats();
+        scheduleUnits();
     }
 
     @Override
@@ -214,6 +215,22 @@ public class Hq extends Robot {
         objects = uc.senseObjects(MapObject.STADIUM, VISION_RANGE);
         for (Location stadium : objects) {
             comms.logStadium(stadium);
+        }
+    }
+
+    public void scheduleUnits() {
+        int id;
+        for (int i = 0; i < comms.SCHEDULE_SLOTS; i++) {
+            id = comms.readScheduleId(i);
+            if (id == -1) {
+                return;
+            }
+
+            if (uc.canSchedule(id)) {
+                debug.println("Scheduled unit " + id);
+                uc.schedule(id);
+            }
+            comms.writeScheduleId(id, -1);
         }
     }
 }

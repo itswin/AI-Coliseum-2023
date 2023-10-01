@@ -42,16 +42,16 @@ public class MicroBatter {
     double currentActionRadius;
     double currentExtendedActionRadius;
     boolean canAttack;
+    boolean canGlobalMove;
     Location currentLoc;
     UnitInfo currentUnit;
 
     boolean doMicro() {
-        if (!uc.canMove() && uc.senseUnits(2, null).length == 0)
-            return false;
         UnitInfo[] units = robot.enemies;
         if (units.length == 0)
             return false;
         canAttack = uc.canAct();
+        canGlobalMove = uc.canMove();
 
         alwaysInRange = false;
         if (!canAttack)
@@ -118,8 +118,18 @@ public class MicroBatter {
             microInfo[8].updateAlly();
         }
 
-        // If no movement is the best damage, attack first and then
-        // choose the best micro out of the remaining,
+        // If you can't move, we have to choose the zero micro.
+        if (!canGlobalMove) {
+            // If the zero micro has an attack, apply it.
+            if (applyAttack(microInfo[8])) {
+                return true;
+            }
+
+            checkAllyScheduleDamageScore(microInfo);
+            return true;
+        }
+
+        // If no movement is the best damage, attack first.
         boolean isZeroBestAttack = true;
         i = 8;
         MicroInfo bestMicro = microInfo[8];
@@ -145,12 +155,21 @@ public class MicroBatter {
                 bestMicro = microInfo[i];
         }
 
-        return apply(bestMicro);
+        if (!apply(bestMicro)) {
+            checkAllyScheduleDamageScore(microInfo);
+        }
+
+        return true;
     }
 
+    // @returns true if we moved
     boolean apply(MicroInfo bestMicro) {
-        if (bestMicro.dir == Direction.ZERO)
-            return true;
+        if (bestMicro.dir == Direction.ZERO) {
+            // Attacking should have actually happened on the previous check,
+            // but I put it here just in case.
+            applyAttack(bestMicro);
+            return false;
+        }
 
         if (uc.canMove(bestMicro.dir)) {
             robot.move(bestMicro.dir);
@@ -161,11 +180,12 @@ public class MicroBatter {
         return false;
     }
 
-    void applyAttack(MicroInfo bestMicro) {
+    boolean applyAttack(MicroInfo bestMicro) {
         if (bestMicro.enemyTarget != null) {
             Direction dir = uc.getLocation().directionTo(bestMicro.enemyTarget);
             if (uc.canBat(dir, 3)) {
                 uc.bat(dir, 3);
+                return true;
             }
         }
 
@@ -174,7 +194,26 @@ public class MicroBatter {
             if (uc.canBat(dir, bestMicro.allyBatStrength)) {
                 uc.schedule(bestMicro.allyId);
                 uc.bat(dir, bestMicro.allyBatStrength);
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    public void checkAllyScheduleDamageScore(MicroInfo[] microInfo) {
+        // Check if we have any positive allyScheduleDamageScores
+        float bestAllyScheduleDamageScore = 0;
+        int i = 8;
+        for (; --i >= 0;) {
+            if (microInfo[i].allyScheduleDamageScore > bestAllyScheduleDamageScore) {
+                bestAllyScheduleDamageScore = microInfo[i].allyScheduleDamageScore;
+            }
+        }
+
+        // If so, tell the HQ to schedule ourself.
+        if (bestAllyScheduleDamageScore > 0) {
+            robot.comms.scheduleId(uc.getInfo().getID());
         }
     }
 
@@ -194,6 +233,7 @@ public class MicroBatter {
         float allyDamageScore = 0;
         int allyBatStrength = 0;
         int allyId = 0;
+        float allyScheduleDamageScore = 0;
         boolean canMove = true;
 
         public MicroInfo(Direction dir) {
@@ -302,8 +342,10 @@ public class MicroBatter {
             // If the ally is adjacent to this location and we can schedule it,
             // calculate a score based on potential damage dealt to the enemy.
             int currentUnitID = currentUnit.getID();
-            if (dist <= 2 && uc.canSchedule(currentUnitID) &&
-                    uc.canAct() && currentUnit.getType() == UnitType.BATTER) {
+            if (dist <= 2 &&
+                    uc.canAct() &&
+                    currentUnit.getType() == UnitType.BATTER) {
+                boolean canScheduleUnit = uc.canSchedule(currentUnitID);
                 float damageScore;
                 int batStrength = 0;
                 Direction allyDir = location.directionTo(currentLoc);
@@ -330,8 +372,7 @@ public class MicroBatter {
                     // speculative, we give more points to being cardinally
                     // adjacent to a unit because that gives the unit more
                     // squares it can move to adjacent to it when it does
-                    // its own micro. Note that we don't distinguish between
-                    // allies and enemies here.
+                    // its own micro.
                     Location adjLoc;
                     // 8 ignores Direction.ZERO
                     for (int i = 8; --i >= 0;) {
@@ -341,19 +382,39 @@ public class MicroBatter {
                         unitInfo = uc.senseUnitAtLocation(adjLoc);
                         if (unitInfo == null || unitInfo.getID() == currentUnitID)
                             continue;
-                        // even indices in dirs are cardinal directions
-                        if (i % 2 == 0) {
-                            damageScore += 5;
+                        // Give more points to being adjacent to an enemy
+                        if (unitInfo.getTeam() == robot.team) {
+                            // even indices in dirs are cardinal directions
+                            // if (i % 2 == 0) {
+                            // damageScore += 5;
+                            // } else {
+                            // damageScore += 3;
+                            // }
                         } else {
-                            damageScore += 3;
+                            if (i % 2 == 0) {
+                                damageScore += 10;
+                            } else {
+                                damageScore += 6;
+                            }
                         }
                     }
 
-                    if (damageScore > allyDamageScore) {
-                        allyBatStrength = batStrength;
-                        allyDamageScore = damageScore;
-                        allyTarget = currentLoc;
-                        allyId = currentUnitID;
+                    if (canScheduleUnit) {
+                        // These are units we can hit on this turn
+                        // because they move after us in the turn order.
+                        if (damageScore > allyDamageScore) {
+                            allyBatStrength = batStrength;
+                            allyDamageScore = damageScore;
+                            allyTarget = currentLoc;
+                            allyId = currentUnitID;
+                        }
+                    } else {
+                        // These are units that move before us in the turn order.
+                        // Enforce a minimum of batting near one ally or enemy
+                        // to consider having the HQ schedule us.
+                        if (damageScore >= 6 && damageScore > allyScheduleDamageScore) {
+                            allyScheduleDamageScore = damageScore;
+                        }
                     }
                 } while (batStrength < GameConstants.MAX_STRENGTH);
             }

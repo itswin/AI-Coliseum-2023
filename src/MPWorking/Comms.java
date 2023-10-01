@@ -34,6 +34,7 @@ public class Comms {
     public final int STADIUM_SLOTS = 16;
     public final int NUM_SLOTS = 1;
     public final int SHARED_MAP_SLOTS = 14641;
+    public final int SCHEDULE_SLOTS = 32;
 
     public Comms(UnitController u, Robot r) {
         uc = u;
@@ -52,8 +53,8 @@ public class Comms {
     public void init() {
         initMap();
         initSymmetry();
-            initBase();
-            initStadium();
+        initBase();
+        initStadium();
     }
 
     public void initMap() {
@@ -89,6 +90,15 @@ public class Comms {
         return flag >= HqFlags.EXPLORE_NORTH && flag <= HqFlags.EXPLORE_NORTHWEST;
     }
 
+    public void scheduleId(int id) {
+        int slot = -1;
+        for (; ++slot < SCHEDULE_SLOTS;) {
+            if (readScheduleId(slot) == -1) {
+                writeScheduleId(slot, id);
+            }
+        }
+    }
+
     public void initBase() {
         for (int i = BASE_SLOTS; --i >= 0;) {
             writeBase(i, new Location(-1, -1));
@@ -100,7 +110,6 @@ public class Comms {
             writeStadium(i, new Location(-1, -1));
         }
     }
-
 
     public int readMapXMin() {
         return uc.read(0);
@@ -448,6 +457,14 @@ public class Comms {
 
     public void writeSharedMapTileType(Location mapLoc, int value) {
         uc.write(146 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY), value);
+    }
+
+    public int readScheduleId(int slot) {
+        return uc.read(14787 + slot);
+    }
+
+    public void writeScheduleId(int slot, int value) {
+        uc.write(14787 + slot, value);
     }
 
 }
