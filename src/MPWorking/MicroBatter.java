@@ -12,6 +12,9 @@ public class MicroBatter {
     final int RANGE_EXTENDED_BATTER = 8;
     final int RANGE_BATTER = 2;
 
+    final int RANGE_HQ = 13;
+    final int RANGE_EXTENDED_HQ = 18;
+
     final Direction[] dirs = {
             Direction.NORTH,
             Direction.NORTHWEST,
@@ -67,6 +70,9 @@ public class MicroBatter {
             if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
+            } else if (currentUnit.getType() == UnitType.HQ) {
+                currentActionRadius = RANGE_HQ;
+                currentExtendedActionRadius = RANGE_EXTENDED_HQ;
             } else {
                 currentActionRadius = 0;
                 currentExtendedActionRadius = 0;
@@ -386,10 +392,10 @@ public class MicroBatter {
             if (allyDamageScore < M.allyDamageScore)
                 return false;
 
-            // if (minDistToAlly < M.minDistToAlly)
-            // return true;
-            // if (minDistToAlly > M.minDistToAlly)
-            // return false;
+            if (minDistToAlly < M.minDistToAlly)
+                return true;
+            if (minDistToAlly > M.minDistToAlly)
+                return false;
 
             if (inRange())
                 return minDistanceToEnemy >= M.minDistanceToEnemy;
