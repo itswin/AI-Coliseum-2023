@@ -336,7 +336,7 @@ public class MicroBatter {
             if (!canMove)
                 return;
             int dist = currentLoc.distanceSquared(location);
-            if (dist < minDistToAlly)
+            if (dist < minDistToAlly && currentUnit.getType() == UnitType.BATTER)
                 minDistToAlly = dist;
 
             // If the ally is adjacent to this location and we can schedule it,
