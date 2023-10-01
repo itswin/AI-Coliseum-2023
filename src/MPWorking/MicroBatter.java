@@ -62,6 +62,7 @@ public class MicroBatter {
         for (; --i >= 0;)
             microInfo[i] = new MicroInfo(dirs[i]);
 
+        boolean isThreatened = false;
         i = units.length;
         for (; --i >= 0;) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
@@ -80,6 +81,11 @@ public class MicroBatter {
 
             currentLoc = currentUnit.getLocation();
 
+            // if (!robot.util.seesObstacleInWay(currentLoc))
+            // isThreatened = true;
+            if (!isThreatened && robot.nav.Bfs20.existsPathTo(currentLoc))
+                isThreatened = true;
+
             microInfo[0].updateEnemy();
             microInfo[1].updateEnemy();
             microInfo[2].updateEnemy();
@@ -90,6 +96,9 @@ public class MicroBatter {
             microInfo[7].updateEnemy();
             microInfo[8].updateEnemy();
         }
+
+        if (!isThreatened)
+            return false;
 
         units = robot.allies;
         i = units.length;
@@ -368,35 +377,20 @@ public class MicroBatter {
                     // we don't want to use this loops strength.
                     damageScore = batStrength;
 
-                    // Loop through all adjacent units. Scoring is kind of
-                    // speculative, we give more points to being cardinally
-                    // adjacent to a unit because that gives the unit more
-                    // squares it can move to adjacent to it when it does
-                    // its own micro.
-                    Location adjLoc;
-                    // 8 ignores Direction.ZERO
-                    for (int i = 8; --i >= 0;) {
-                        adjLoc = battedAllyLoc.add(dirs[i]);
-                        if (!uc.canSenseLocation(adjLoc))
+                    // Loop through all enemy units. Scoring is kind of
+                    // speculative, we give more points to being closer an
+                    // enemy because that gives the unit more squares it can
+                    // move to adjacent to the enemy when it does its own micro.
+                    UnitInfo[] enemyUnits = robot.enemies;
+                    UnitInfo currentEnemy;
+                    for (int i = enemyUnits.length; --i >= 0;) {
+                        if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
+                            break;
+                        currentEnemy = enemyUnits[i];
+                        if (currentEnemy.getType() != UnitType.BATTER)
                             continue;
-                        unitInfo = uc.senseUnitAtLocation(adjLoc);
-                        if (unitInfo == null || unitInfo.getID() == currentUnitID)
-                            continue;
-                        // Give more points to being adjacent to an enemy
-                        if (unitInfo.getTeam() == robot.team) {
-                            // even indices in dirs are cardinal directions
-                            // if (i % 2 == 0) {
-                            // damageScore += 5;
-                            // } else {
-                            // damageScore += 3;
-                            // }
-                        } else {
-                            if (i % 2 == 0) {
-                                damageScore += 10;
-                            } else {
-                                damageScore += 6;
-                            }
-                        }
+                        // Note: battedAllyLoc should never be where an enemy is now.
+                        damageScore += 15.0 - battedAllyLoc.distanceSquared(currentEnemy.getLocation());
                     }
 
                     if (canScheduleUnit) {
@@ -412,7 +406,7 @@ public class MicroBatter {
                         // These are units that move before us in the turn order.
                         // Enforce a minimum of batting near one ally or enemy
                         // to consider having the HQ schedule us.
-                        if (damageScore >= 6 && damageScore > allyScheduleDamageScore) {
+                        if (damageScore > 3 && damageScore > allyScheduleDamageScore) {
                             allyScheduleDamageScore = damageScore;
                         }
                     }

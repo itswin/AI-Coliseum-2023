@@ -212,6 +212,7 @@ public class BFS10 {
     public double bestScore;
     public double currDist;
     public MapObject mapObj;
+    public boolean hasCalced = false;
 
     public Direction direction(double dist) {
         if (dist==Double.POSITIVE_INFINITY) {
@@ -220,7 +221,16 @@ public class BFS10 {
         return DIRECTIONS[(int)(dist * 16 % 16)];
     }
 
+    public void init() {
+        hasCalced = false;
+    }
+
     public Direction bestDir(Location target) {
+        if (hasCalced) {
+            return dirTo(target);
+        }
+
+        hasCalced = true;
 
         l112 = uc.getLocation();
         d112 = 0;
@@ -642,6 +652,10 @@ public class BFS10 {
         // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir80 + "\t" + dir81 + "\t" + dir82 + "\t" + dir83 + "\t" + dir84 + "\t" + "\t" + "\t" + "\t" + "\t");
         // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir66 + "\t" + dir67 + "\t" + dir68 + "\t" + "\t" + "\t" + "\t" + "\t" + "\t");
 
+        return dirTo(target);
+    }
+
+    private Direction dirTo(Location target) {
         if (target.distanceSquared(l112) <= 10) {
             int target_dx = target.x - l112.x;
             int target_dy = target.y - l112.y;
@@ -1035,7 +1049,14 @@ if (target_dy >= 0) {
             ans = d130;
         }
 
-        
         return direction(ans);
+    }
+
+    public boolean existsPathTo(Location target) {
+        if (!hasCalced) {
+            return bestDir(target) != null;
+        }
+
+        return dirTo(target) != null;
     }
 }

@@ -532,6 +532,7 @@ public class BFS32 {
     public double bestScore;
     public double currDist;
     public MapObject mapObj;
+    public boolean hasCalced = false;
 
     public Direction direction(double dist) {
         if (dist==Double.POSITIVE_INFINITY) {
@@ -540,7 +541,16 @@ public class BFS32 {
         return DIRECTIONS[(int)(dist * 16 % 16)];
     }
 
+    public void init() {
+        hasCalced = false;
+    }
+
     public Direction bestDir(Location target) {
+        if (hasCalced) {
+            return dirTo(target);
+        }
+
+        hasCalced = true;
 
         l112 = uc.getLocation();
         d112 = 0;
@@ -1674,6 +1684,10 @@ public class BFS32 {
         // uc.println("\t" + "\t" + "\t" + "\t" + dir48 + "\t" + dir49 + "\t" + dir50 + "\t" + dir51 + "\t" + dir52 + "\t" + dir53 + "\t" + dir54 + "\t" + dir55 + "\t" + dir56 + "\t" + "\t" + "\t");
         // uc.println("\t" + "\t" + "\t" + "\t" + "\t" + "\t" + dir35 + "\t" + dir36 + "\t" + dir37 + "\t" + dir38 + "\t" + dir39 + "\t" + "\t" + "\t" + "\t" + "\t");
 
+        return dirTo(target);
+    }
+
+    private Direction dirTo(Location target) {
         if (target.distanceSquared(l112) <= 32) {
             int target_dx = target.x - l112.x;
             int target_dy = target.y - l112.y;
@@ -2307,7 +2321,14 @@ if (target_dy >= 0) {
             ans = d147;
         }
 
-        
         return direction(ans);
+    }
+
+    public boolean existsPathTo(Location target) {
+        if (!hasCalced) {
+            return bestDir(target) != null;
+        }
+
+        return dirTo(target) != null;
     }
 }

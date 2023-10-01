@@ -182,8 +182,7 @@ def gen_bfs(radius):
     return out
 
 def gen_selection(radius, smaller_radius):
-    out = f"""
-        if (target.distanceSquared(l{encode(0,0)}) <= {radius}) {{
+    out = f"""        if (target.distanceSquared(l{encode(0,0)}) <= {radius}) {{
             int target_dx = target.x - l{encode(0,0)}.x;
             int target_dy = target.y - l{encode(0,0)}.y;"""
     val_dict_x = {}
@@ -281,6 +280,7 @@ public class BFS{rad} {{
     public double bestScore;
     public double currDist;
     public MapObject mapObj;
+    public boolean hasCalced = false;
 
     public Direction direction(double dist) {{
         if (dist==Double.POSITIVE_INFINITY) {{
@@ -289,13 +289,34 @@ public class BFS{rad} {{
         return DIRECTIONS[(int)(dist * 16 % 16)];
     }}
 
+    public void init() {{
+        hasCalced = false;
+    }}
+
     public Direction bestDir(Location target) {{
+        if (hasCalced) {{
+            return dirTo(target);
+        }}
+
+        hasCalced = true;
 {gen_init(radius)}
 {gen_bfs(radius)}
 {gen_print(radius)}
+
+        return dirTo(target);
+    }}
+
+    private Direction dirTo(Location target) {{
 {gen_selection(radius, smaller_radius)}
-        
         return direction(ans);
+    }}
+
+    public boolean existsPathTo(Location target) {{
+        if (!hasCalced) {{
+            return bestDir(target) != null;
+        }}
+
+        return dirTo(target) != null;
     }}
 }}
 """)

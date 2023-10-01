@@ -76,6 +76,12 @@ public class Nav {
         Bfs32 = new BFS32(uc);
     }
 
+    public void initTurn() {
+        Bfs10.init();
+        Bfs20.init();
+        Bfs32.init();
+    }
+
     public Direction getBestDir(Location dest) {
         return getBestDir(dest, 0);
     }

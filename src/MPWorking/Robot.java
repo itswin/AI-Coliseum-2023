@@ -107,6 +107,7 @@ public class Robot {
 
     public void initTurn() {
         pathfinding.initTurn();
+        nav.initTurn();
 
         enemies = uc.senseUnits(VISION_RANGE, opponent);
         allies = uc.senseUnits(VISION_RANGE, team);
