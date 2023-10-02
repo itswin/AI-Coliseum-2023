@@ -86,7 +86,7 @@ public class MapTracker {
             return;
 
         BiPredicate<Integer, Integer> isReflectedTile = (tile1, tile2) -> {
-            if (tile2 == TileType.UNKNOWN) {
+            if (tile1 == TileType.UNKNOWN || tile2 == TileType.UNKNOWN) {
                 return true;
             } else if (tile1 == TileType.ENEMY_HQ) {
                 return tile2 == TileType.FRIENDLY_HQ;

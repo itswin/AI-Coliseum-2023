@@ -96,14 +96,13 @@ public class Util {
     }
 
     Location reflectRotational(Location loc) {
+        if (!mapBoundsInitialized)
+            return null;
+
         int mapXMin = robot.comms.readMapXMin();
         int mapXMax = robot.comms.readMapXMax();
         int mapYMin = robot.comms.readMapYMin();
         int mapYMax = robot.comms.readMapYMax();
-
-        if (mapXMin == -1 || mapXMax == -1 || mapYMin == -1 || mapYMax == -1) {
-            return null;
-        }
 
         return new Location(mapXMax - (loc.x - mapXMin), mapYMax - (loc.y - mapYMin));
     }
@@ -116,15 +115,13 @@ public class Util {
     }
 
     Location[] getValidSymmetryLocs(Location loc, boolean v, boolean h, boolean r) {
+        if (!mapBoundsInitialized)
+            return null;
+
         int mapXMin = robot.comms.readMapXMin();
         int mapXMax = robot.comms.readMapXMax();
         int mapYMin = robot.comms.readMapYMin();
         int mapYMax = robot.comms.readMapYMax();
-
-        // Don't know map dimensions yet.
-        if (mapXMin == -1 || mapXMax == -1 || mapYMin == -1 || mapYMax == -1) {
-            return null;
-        }
 
         Location verticalFlip = new Location(loc.x, mapYMax - (loc.y - mapYMin));
         Location horizontalFlip = new Location(mapXMax - (loc.x - mapXMin), loc.y);

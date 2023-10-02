@@ -13,6 +13,7 @@ SCHEMA = {
             'y_min',
             'y_max',
             'height',
+            'bounds_intialized',
         ]
     },
     'HQ': {

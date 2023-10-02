@@ -27,6 +27,11 @@ public class Hq extends Robot {
     public int numBatters;
     public int numCatchers;
 
+    public int invalidateX;
+    public int invalidateY;
+
+    public boolean resourcesReflected;
+
     public Hq(UnitController u) {
         super(u);
         comms.init();
@@ -40,6 +45,11 @@ public class Hq extends Robot {
         comms.writeHqYCoord(uc.getLocation().y);
 
         loadResources();
+
+        invalidateX = -1;
+        invalidateY = -1;
+
+        resourcesReflected = false;
     }
 
     public void loadExploreDirections() {
@@ -78,6 +88,14 @@ public class Hq extends Robot {
 
         decrementHeartbeats();
         scheduleUnits();
+        writeMapBoundsInitialized();
+    }
+
+    @Override
+    public void endTurn() {
+        super.endTurn();
+        reflectResources();
+        invalidateSymmetry();
     }
 
     @Override
@@ -196,12 +214,16 @@ public class Hq extends Robot {
     }
 
     public void decrementHeartbeats() {
-        for (int i = comms.BASE_SLOTS; --i >= 0;) {
+        for (int i = 0; i < comms.BASE_SLOTS; i++) {
+            if (comms.readBaseX(i) == -1)
+                break;
             comms.decrementBasePitcherHeartbeat(i);
             comms.decrementBaseBatterHeartbeat(i);
         }
 
-        for (int i = comms.STADIUM_SLOTS; --i >= 0;) {
+        for (int i = 0; i < comms.STADIUM_SLOTS; i++) {
+            if (comms.readStadiumX(i) == -1)
+                break;
             comms.decrementStadiumPitcherHeartbeat(i);
             comms.decrementStadiumBatterHeartbeat(i);
         }
@@ -227,10 +249,99 @@ public class Hq extends Robot {
             }
 
             if (uc.canSchedule(id)) {
-                debug.println("Scheduled unit " + id);
+                // debug.println("Scheduled unit " + id);
                 uc.schedule(id);
             }
             comms.writeScheduleId(id, -1);
+        }
+    }
+
+    public void writeMapBoundsInitialized() {
+        if (util.mapBoundsInitialized)
+            return;
+
+        int mapXMin = comms.readMapXMin();
+        int mapXMax = comms.readMapXMax();
+        int mapYMin = comms.readMapYMin();
+        int mapYMax = comms.readMapYMax();
+
+        if (mapXMin == -1 || mapXMax == -1 || mapYMin == -1 || mapYMax == -1)
+            return;
+
+        comms.writeMapBoundsIntialized(1);
+        util.mapBoundsInitialized = true;
+    }
+
+    // This only runs once after the symmetry is determined.
+    public void reflectResources() {
+        if (resourcesReflected)
+            return;
+
+        int vertSym = comms.readSymmetryVertical();
+        int horizSym = comms.readSymmetryHorizontal();
+        int rotSym = comms.readSymmetryRotational();
+
+        if (vertSym + horizSym + rotSym != 1)
+            return;
+
+        resourcesReflected = true;
+
+        Location resourceLoc;
+        Location[] symLocs;
+        for (int i = 0; i < comms.BASE_SLOTS; i++) {
+            if (comms.readBaseX(i) == -1)
+                break;
+            resourceLoc = comms.readBase(i);
+            symLocs = util.getValidSymmetryLocs(resourceLoc, vertSym == 1, horizSym == 1, rotSym == 1);
+            if (symLocs != null && symLocs.length == 1) {
+                comms.logBase(symLocs[0]);
+            }
+        }
+
+        for (int i = 0; i < comms.STADIUM_SLOTS; i++) {
+            if (comms.readStadiumX(i) == -1)
+                break;
+            resourceLoc = comms.readStadium(i);
+            symLocs = util.getValidSymmetryLocs(resourceLoc, vertSym == 1, horizSym == 1, rotSym == 1);
+            if (symLocs != null && symLocs.length == 1) {
+                comms.logStadium(symLocs[0]);
+            }
+        }
+    }
+
+    public void invalidateSymmetry() {
+        if (!util.mapBoundsInitialized)
+            return;
+
+        int vertSym = comms.readSymmetryVertical();
+        int horizSym = comms.readSymmetryHorizontal();
+        int rotSym = comms.readSymmetryRotational();
+
+        // Only one symmetry left, do not invalidate
+        if (vertSym + horizSym + rotSym == 1)
+            return;
+
+        int mapXMin = comms.readMapXMin();
+        int mapXMax = comms.readMapXMax();
+        int mapYMin = comms.readMapYMin();
+        int mapYMax = comms.readMapYMax();
+
+        if (invalidateX == -1 && invalidateY == -1) {
+            invalidateX = mapXMin;
+            invalidateY = mapYMin;
+        }
+
+        Location loc;
+        for (; invalidateX < mapXMax; invalidateX++) {
+            if (uc.getEnergyLeft() < mapTracker.VISITED_BC_LEFT)
+                break;
+            for (; invalidateY < mapYMax; invalidateY++) {
+                if (uc.getEnergyLeft() < mapTracker.VISITED_BC_LEFT)
+                    break;
+                loc = new Location(invalidateX, invalidateY);
+                mapTracker.invalidateSymmetries(loc);
+            }
+            invalidateY = mapYMin;
         }
     }
 }

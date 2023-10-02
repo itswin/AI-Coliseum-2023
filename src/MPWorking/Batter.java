@@ -9,6 +9,10 @@ public class Batter extends Robot {
 
     MicroBatter microBatter;
 
+    boolean isExploring;
+    boolean isTargetingBase;
+    boolean isTargetingStadium;
+
     public Batter(UnitController u) {
         super(u);
         microBatter = new MicroBatter(uc, this);
@@ -21,16 +25,21 @@ public class Batter extends Robot {
         if (shouldLoadNextTarget()) {
             loadNextTarget();
         }
+
+        isExploring = false;
+        isTargetingBase = false;
+        isTargetingStadium = false;
     }
 
     @Override
     public void takeTurn() {
         if (!microBatter.doMicro()) {
+            logResources();
             moveToTarget();
         }
     }
 
-    public void moveToTarget() {
+    public void logResources() {
         // None of our batters around the location
         ToDoubleFunction<Location> pred = (loc) -> {
             Location[] adjLocs = util.getAdjLocs(loc);
@@ -49,9 +58,6 @@ public class Batter extends Robot {
             return score;
         };
         Location visibleTarget = null;
-        boolean isExploring = false;
-        boolean isTargetingBase = false;
-        boolean isTargetingStadium = false;
         if ((visibleTarget = getBestMapObj(MapObject.STADIUM, pred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
@@ -64,7 +70,9 @@ public class Batter extends Robot {
         if (visibleTarget != null) {
             target = visibleTarget;
         }
+    }
 
+    public void moveToTarget() {
         // Semi-solves race condition of multiple batters walking up to
         // a target at the same time.
         if (uc.canSenseLocation(target)) {

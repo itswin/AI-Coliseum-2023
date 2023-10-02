@@ -108,6 +108,9 @@ public class Robot {
     public void initTurn() {
         pathfinding.initTurn();
         nav.initTurn();
+        if (!util.mapBoundsInitialized) {
+            util.mapBoundsInitialized = comms.readMapBoundsIntialized() == 1;
+        }
 
         enemies = uc.senseUnits(VISION_RANGE, opponent);
         allies = uc.senseUnits(VISION_RANGE, team);
