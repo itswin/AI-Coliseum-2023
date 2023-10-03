@@ -52,14 +52,9 @@ public class Pitcher extends Robot {
 
     @Override
     public void takeTurn() {
+        pickupBall();
         if (roundSeenEnemyBatter == uc.getRound()) {
-            if (shouldAttack()) {
-                didMicro = microPitcher.doMicro(false);
-                attack();
-            }
-            if (microPitcher.flee()) {
-                didMicro = true;
-            }
+            didMicro = microPitcher.doMicro();
         }
 
         ToDoubleFunction<Location> pred = (loc) -> {
@@ -76,10 +71,20 @@ public class Pitcher extends Robot {
             score -= Math.sqrt(hq.distanceSquared(loc));
             return score;
         };
+
+        Location currentLocation = uc.getLocation();
+        ToDoubleFunction<Location> ballPred = (loc) -> {
+            return 100 - currentLocation.distanceSquared(loc);
+        };
+
         Location visibleTarget = null;
         boolean isTargetingBase = false;
         boolean isTargetingStadium = false;
-        if (uc.getRound() < ROUNDS_FOR_ONLY_BASES &&
+        boolean isTargetingBall = false;
+        if (!uc.getInfo().isCarryingBall() &&
+                (visibleTarget = getBestMapObj(MapObject.BALL, ballPred)) != null) {
+            isTargetingBall = true;
+        } else if (uc.getRound() < ROUNDS_FOR_ONLY_BASES &&
                 (visibleTarget = getBestMapObj(MapObject.STADIUM, pred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
@@ -93,9 +98,28 @@ public class Pitcher extends Robot {
             target = visibleTarget;
         }
 
-        nav.move(target);
+        if (!didMicro) {
+            nav.move(target);
+        }
 
-        heartbeatTarget(isTargetingBase, isTargetingStadium);
+        if (isTargetingBall) {
+            pickupBall();
+        } else {
+            heartbeatTarget(isTargetingBase, isTargetingStadium);
+        }
+    }
+
+    public void pickupBall() {
+        if (uc.getInfo().isCarryingBall())
+            return;
+
+        Location[] mapObjs = uc.senseObjects(MapObject.BALL, 2);
+        if (mapObjs.length > 0) {
+            Direction dir = uc.getLocation().directionTo(mapObjs[0]);
+            if (uc.canMoveBall(dir)) {
+                uc.moveBall(dir);
+            }
+        }
     }
 
     public boolean shouldAttack() {

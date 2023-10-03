@@ -30,6 +30,8 @@ public class Hq extends Robot {
     public int invalidateX;
     public int invalidateY;
 
+    UnitType recruitType;
+
     public boolean resourcesReflected;
 
     public Hq(UnitController u) {
@@ -134,36 +136,40 @@ public class Hq extends Robot {
     }
 
     public void initAction() {
-        UnitType recruitType;
         if (numBatters < NUM_INIT_BATTERS) {
             recruitType = UnitType.BATTER;
         } else {
             recruitType = UnitType.PITCHER;
         }
 
-        Direction dir = getNextBuildDir();
-        if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
-            uc.recruitUnit(recruitType, dir);
-            exploreDirIndex++;
-            exploreDirIndex %= exploreDirections.length;
-            nextFlag = util.dirToFlag(dir);
-        }
+        buildRecruitType();
     }
 
     public void normalAction() {
-        UnitType recruitType;
         if (numPitchers * BATTERS_TO_PITCHERS_RATIO < numBatters) {
             recruitType = UnitType.PITCHER;
         } else {
             recruitType = UnitType.BATTER;
         }
 
+        buildRecruitType();
+    }
+
+    public void buildRecruitType() {
         Direction dir = getNextBuildDir();
+        // Construct pitchers and balls at the same time.
+        if (recruitType == UnitType.PITCHER && uc.getReputation() < UnitType.PITCHER.getStat(UnitStat.REP_COST) + 1)
+            return;
+
         if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
             uc.recruitUnit(recruitType, dir);
             exploreDirIndex++;
             exploreDirIndex %= exploreDirections.length;
             nextFlag = util.dirToFlag(dir);
+
+            if (recruitType == UnitType.PITCHER) {
+                tryConstructBallAdjacent(dir);
+            }
         }
     }
 
@@ -177,6 +183,7 @@ public class Hq extends Robot {
                 exploreDirIndex++;
                 exploreDirIndex %= exploreDirections.length;
                 nextFlag = util.dirToFlag(dir);
+                tryConstructBallAdjacent(dir);
             }
         }
 
@@ -342,6 +349,14 @@ public class Hq extends Robot {
                 mapTracker.invalidateSymmetries(loc);
             }
             invalidateY = mapYMin;
+        }
+    }
+
+    public void tryConstructBallAdjacent(Direction dir) {
+        if (uc.canConstructBall(dir.rotateLeft())) {
+            uc.constructBall(dir.rotateLeft());
+        } else if (uc.canConstructBall(dir.rotateRight())) {
+            uc.constructBall(dir.rotateRight());
         }
     }
 }

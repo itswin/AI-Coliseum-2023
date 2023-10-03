@@ -62,6 +62,23 @@ public class MicroBatter {
         for (; --i >= 0;)
             microInfo[i] = new MicroInfo(dirs[i]);
 
+        Location[] balls = uc.senseObjects(MapObject.BALL, RANGE_EXTENDED_BATTER);
+        i = balls.length;
+        for (; --i >= 0;) {
+            if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
+                break;
+            currentLoc = balls[i];
+            microInfo[0].updateBall();
+            microInfo[1].updateBall();
+            microInfo[2].updateBall();
+            microInfo[3].updateBall();
+            microInfo[4].updateBall();
+            microInfo[5].updateBall();
+            microInfo[6].updateBall();
+            microInfo[7].updateBall();
+            microInfo[8].updateBall();
+        }
+
         boolean isThreatened = false;
         i = units.length;
         for (; --i >= 0;) {
@@ -177,7 +194,7 @@ public class MicroBatter {
             // Attacking should have actually happened on the previous check,
             // but I put it here just in case.
             applyAttack(bestMicro);
-            return false;
+            return true;
         }
 
         if (uc.canMove(bestMicro.dir)) {
@@ -234,8 +251,7 @@ public class MicroBatter {
         float enemyDamageScore = 0;
         int enemyBatStrength = 0;
         int battersAttackRange = 0;
-        int battersVisionRange = 0;
-        int possibleEnemybatters = 0;
+        int possibleEnemyBatters = 0;
         int minDistToAlly = INF;
         Location enemyTarget = null;
         Location allyTarget = null;
@@ -267,10 +283,8 @@ public class MicroBatter {
                 minDistanceToEnemy = dist;
             if (dist <= currentActionRadius)
                 battersAttackRange++;
-            if (dist <= 20)
-                battersVisionRange++;
             if (dist <= currentExtendedActionRadius)
-                possibleEnemybatters++;
+                possibleEnemyBatters++;
             if (dist <= ACTION_RANGE && canAttack) {
                 // Calculate a score based on how much "damage"
                 // you deal by batting this enemy.
@@ -414,6 +428,77 @@ public class MicroBatter {
             }
         }
 
+        void updateBall() {
+            if (!canMove) {
+                // Override not microing onto stadiums
+                if (uc.canMove(dir)) {
+                    canMove = true;
+                } else {
+                    return;
+                }
+            }
+
+            int dist = currentLoc.distanceSquared(location);
+            if (0 < dist && dist <= ACTION_RANGE && canAttack) {
+                // Calculate a score based on how much "damage"
+                // you deal by batting this ball.
+
+                float damageScore = 0;
+                int batStrength = 0;
+                Direction ballDir = location.directionTo(currentLoc);
+                Location battedBallLoc = currentLoc;
+                MapObject mapObj;
+                UnitInfo unitInfo;
+                do {
+                    battedBallLoc = battedBallLoc.add(ballDir);
+                    if (!uc.canSenseLocation(battedBallLoc)) {
+                        // Batting balls outside of vision radius is explicitly bad.
+                        break;
+                    }
+                    mapObj = uc.senseObjectAtLocation(battedBallLoc, true);
+                    if (mapObj == MapObject.WATER || mapObj == MapObject.BALL) {
+                        // Waste of a ball.
+                        break;
+                    }
+                    unitInfo = uc.senseUnitAtLocation(battedBallLoc);
+                    if (unitInfo != null) {
+                        UnitType type = unitInfo.getType();
+                        if (type == UnitType.HQ) {
+                            // Just assign a score of 25 to getting 100 points.
+                            // Killing units is often more important.
+                            damageScore = 25;
+                            batStrength++;
+                            break;
+                        } else if (type == UnitType.CATCHER) {
+                            // No damage, unit isn't killed.
+                            batStrength++;
+                            break;
+                        } else {
+                            // Batter or pitcher
+                            if (unitInfo.getTeam() == robot.team) {
+                                // Don't kill our own units :'(
+                                damageScore = -10;
+                                break;
+                            } else {
+                                // Ignore the cost of balls, they're free lol.
+                                damageScore = type.getStat(UnitStat.REP_COST);
+                            }
+                            batStrength++;
+                            break;
+                        }
+                    }
+                    batStrength++;
+                } while (batStrength < GameConstants.MAX_STRENGTH);
+
+                damageScore += batStrength;
+                if (damageScore > enemyDamageScore) {
+                    enemyDamageScore = damageScore;
+                    enemyBatStrength = batStrength;
+                    enemyTarget = currentLoc;
+                }
+            }
+        }
+
         boolean inRange() {
             if (alwaysInRange)
                 return true;
@@ -437,9 +522,9 @@ public class MicroBatter {
             if (battersAttackRange > M.battersAttackRange)
                 return false;
 
-            if (possibleEnemybatters < M.possibleEnemybatters)
+            if (possibleEnemyBatters < M.possibleEnemyBatters)
                 return true;
-            if (possibleEnemybatters > M.possibleEnemybatters)
+            if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
 
             if (allyDamageScore > M.allyDamageScore)
