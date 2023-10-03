@@ -132,12 +132,10 @@ public class MicroPitcher {
             if (uc.canSchedule(bestMicro.allyAssistID) && uc.canMoveBall(bestMicro.allyAssistDir)) {
                 uc.schedule(bestMicro.allyAssistID);
                 uc.moveBall(bestMicro.allyAssistDir);
-                robot.debug.println("Placed ball for ally: " + bestMicro.allyAssistID);
                 didMicro = true;
             }
         } else if (bestMicro.allyScheduleDamageScore > 0) {
             robot.comms.scheduleId(uc.getInfo().getID());
-            robot.debug.println("Pitcher scheduled self");
         }
 
         return didMicro;

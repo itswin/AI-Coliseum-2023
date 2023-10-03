@@ -57,18 +57,21 @@ public class Pitcher extends Robot {
             didMicro = microPitcher.doMicro();
         }
 
+        Location currentLoc = uc.getLocation();
         ToDoubleFunction<Location> pred = (loc) -> {
             UnitInfo unit = uc.senseUnitAtLocation(loc);
             double score = 0;
-            if (unit == null || unit.getID() == uc.getInfo().getID()) {
-                score += 200;
+            if (unit == null) {
+                score += 400;
+            } else if (unit.getID() == uc.getInfo().getID()) {
+                score += 600;
             } else if (unit.getTeam() != uc.getTeam()) {
-                score += 100;
+                score += 200;
             } else {
-                score = -100;
+                score = -200;
             }
 
-            score -= Math.sqrt(hq.distanceSquared(loc));
+            score -= Math.sqrt(hq.distanceSquared(loc)) + Math.sqrt(currentLoc.distanceSquared(loc));
             return score;
         };
 
