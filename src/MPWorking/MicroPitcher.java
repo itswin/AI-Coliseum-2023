@@ -140,7 +140,7 @@ public class MicroPitcher {
                 didMicro = true;
             }
         } else if (bestMicro.allyScheduleDamageScore > 0) {
-            robot.comms.scheduleId(uc.getInfo().getID());
+            robot.comms.scheduleId(robot.ID);
         }
 
         return didMicro;
@@ -229,6 +229,7 @@ public class MicroPitcher {
             boolean lookedAhead = false;
             Location nextLocation;
             boolean canPlace = false;
+            boolean subtractAfter = false;
             int ballPlacementIndex;
             // Just assign some positive cost to HQs.
             float damageScore = currentUnit.getType() == UnitType.HQ ? 25
@@ -237,6 +238,7 @@ public class MicroPitcher {
                 if (lookedAhead) {
                     lookedAhead = false;
                 } else {
+                    canPlace = true;
                     potentialBall = potentialBall.add(dir);
                     if (!uc.canSenseLocation(potentialBall))
                         break;
@@ -250,16 +252,19 @@ public class MicroPitcher {
                         } else {
                             damageScore += unitInfo.getType().getStat(UnitStat.REP_COST);
                         }
+                        canPlace = false;
                     }
                     mapObj = uc.senseObjectAtLocation(potentialBall, true);
                     if (mapObj == MapObject.WATER || mapObj == MapObject.BALL)
                         break;
                 }
 
+                if (!canPlace)
+                    continue;
+
                 if (potentialBall.distanceSquared(location) <= ACTION_RANGE) {
                     // Check the next location to make sure that a batter can be there
                     nextLocation = potentialBall.add(dir);
-                    canPlace = true;
                     if (!uc.canSenseLocation(nextLocation))
                         break;
                     unitInfo = uc.senseUnitAtLocation(nextLocation);
@@ -267,11 +272,14 @@ public class MicroPitcher {
                         if (unitInfo.getType() == UnitType.CATCHER || unitInfo.getType() == UnitType.HQ)
                             break;
                         if (unitInfo.getTeam() == robot.team) {
-                            damageScore -= unitInfo.getType().getStat(UnitStat.REP_COST);
+                            subtractAfter = true;
+                            if (unitInfo.getType() != UnitType.BATTER) {
+                                canPlace = false;
+                            }
                         } else {
                             damageScore += unitInfo.getType().getStat(UnitStat.REP_COST);
+                            canPlace = false;
                         }
-                        canPlace = false;
                     }
                     mapObj = uc.senseObjectAtLocation(nextLocation, true);
                     if (mapObj == MapObject.WATER || mapObj == MapObject.BALL)
@@ -283,6 +291,11 @@ public class MicroPitcher {
                             ballAttackScores[ballPlacementIndex] = damageScore;
                             ballPlacementAttackLocs[ballPlacementIndex] = nextLocation;
                         }
+                    }
+
+                    if (subtractAfter) {
+                        damageScore -= unitInfo.getType().getStat(UnitStat.REP_COST);
+                        subtractAfter = false;
                     }
 
                     lookedAhead = true;

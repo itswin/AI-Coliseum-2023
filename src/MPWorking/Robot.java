@@ -34,6 +34,7 @@ public class Robot {
     public float MOVEMENT_RANGE;
     public float ACTION_COOLDOWN;
     public float MOVEMENT_COOLDOWN;
+    public int ID;
 
     public int commsBaseIndex;
     public int commsStadiumIndex;
@@ -94,6 +95,7 @@ public class Robot {
         MOVEMENT_RANGE = uc.getType().getStat(UnitStat.MOVEMENT_RANGE);
         ACTION_COOLDOWN = uc.getType().getStat(UnitStat.ACTION_COOLDOWN);
         MOVEMENT_COOLDOWN = uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN);
+        ID = uc.getInfo().getID();
 
         targetType = TargetType.BASE;
         commsBaseIndex = 0;
@@ -108,6 +110,7 @@ public class Robot {
     public void initTurn() {
         pathfinding.initTurn();
         nav.initTurn();
+        explore.initTurn();
         if (!util.mapBoundsInitialized) {
             util.mapBoundsInitialized = comms.readMapBoundsIntialized() == 1;
         }

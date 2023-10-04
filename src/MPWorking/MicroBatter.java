@@ -239,7 +239,7 @@ public class MicroBatter {
 
         // If so, tell the HQ to schedule ourself.
         if (bestAllyScheduleDamageScore > 0) {
-            robot.comms.scheduleId(uc.getInfo().getID());
+            robot.comms.scheduleId(robot.ID);
         }
     }
 

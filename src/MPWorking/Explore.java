@@ -14,9 +14,11 @@ public class Explore {
 
     int visionRadius;
 
+    boolean changedExploreTarget = false;
     Location exploreTarget;
     Direction exploreDir = Direction.ZERO;
     final double EXPLORE_DIST = 10;
+    boolean changedExplore3Target = false;
     Location explore3Target;
 
     int turnSetExploreTarget = -1;
@@ -28,6 +30,11 @@ public class Explore {
         robot = r;
         visionRadius = (int) uc.getType().getStat(UnitStat.VISION_RANGE);
         initExploreDir();
+    }
+
+    public void initTurn() {
+        changedExplore3Target = false;
+        changedExploreTarget = false;
     }
 
     // Don't continue in this explore dir if it will bring you too close to a wall.
@@ -110,6 +117,7 @@ public class Explore {
                 // Estimate the amount of time you expect to take to get to the target
                 EXPLORE_TARGET_TIMEOUT = (int) (2 * Math.sqrt(currLoc.distanceSquared(explore3Target)) *
                         uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN));
+                changedExplore3Target = true;
                 return;
             }
         }
@@ -249,6 +257,7 @@ public class Explore {
                 // Estimate the amount of time you expect to take to get to the target
                 EXPLORE_TARGET_TIMEOUT = (int) (2 * Math.sqrt(currLoc.distanceSquared(exploreTarget)) *
                         uc.getType().getStat(UnitStat.MOVEMENT_COOLDOWN));
+                changedExploreTarget = true;
                 return;
             }
         }

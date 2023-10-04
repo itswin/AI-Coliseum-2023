@@ -1,6 +1,7 @@
 package MPWorking;
 
 import java.util.function.ToDoubleFunction;
+import java.util.function.ToDoubleBiFunction;
 
 import aic2023.user.*;
 
@@ -41,7 +42,9 @@ public class Batter extends Robot {
 
     public void logResources() {
         // None of our batters around the location
-        ToDoubleFunction<Location> pred = (loc) -> {
+        // If you're adjacent, only stay if you're the lowest ID.
+        Location currentLoc = uc.getLocation();
+        ToDoubleBiFunction<Location, Boolean> pred = (loc, isAdj) -> {
             Location[] adjLocs = util.getAdjLocs(loc);
             double score = 100;
             for (Location adjLoc : adjLocs) {
@@ -49,22 +52,46 @@ public class Batter extends Robot {
                 if (unit != null &&
                         unit.getTeam() == uc.getTeam() &&
                         unit.getType() == UnitType.BATTER &&
-                        unit.getID() != uc.getInfo().getID()) {
+                        ((!isAdj && unit.getID() != ID) || (isAdj && unit.getID() < ID))) {
                     return -1;
                 }
             }
 
-            score -= Math.sqrt(hq.distanceSquared(loc));
+            score -= Math.sqrt(hq.distanceSquared(loc)) + Math.sqrt(currentLoc.distanceSquared(loc));
             return score;
         };
+
+        ToDoubleFunction<Location> stadPred = (loc) -> {
+            boolean isAdj = currentLoc.distanceSquared(loc) <= 2;
+            if (!isAdj) {
+                int stadiumSlot = util.getStadiumSlot(loc);
+                if (stadiumSlot != -1 && !comms.isStadiumBatterHeartbeatDead(stadiumSlot)) {
+                    return -1;
+                }
+            }
+            return pred.applyAsDouble(loc, isAdj);
+        };
+        ToDoubleFunction<Location> basePred = (loc) -> {
+            boolean isAdj = currentLoc.distanceSquared(loc) <= 2;
+            if (!isAdj) {
+                int baseSlot = util.getBaseSlot(loc);
+                if (baseSlot != -1 && !comms.isBaseBatterHeartbeatDead(baseSlot)) {
+                    return -1;
+                }
+            }
+            return pred.applyAsDouble(loc, isAdj);
+        };
+
         Location visibleTarget = null;
-        if ((visibleTarget = getBestMapObj(MapObject.STADIUM, pred)) != null) {
+        if ((visibleTarget = getBestMapObj(MapObject.STADIUM, stadPred)) != null) {
             util.logStadiumAndReflection(visibleTarget);
             isTargetingStadium = true;
+            targetType = TargetType.STADIUM;
         } else if (uc.getRound() > ROUNDS_FOR_ONLY_STADIUM &&
-                (visibleTarget = getBestMapObj(MapObject.BASE, pred)) != null) {
+                (visibleTarget = getBestMapObj(MapObject.BASE, basePred)) != null) {
             comms.logBase(visibleTarget);
             isTargetingBase = true;
+            targetType = TargetType.BASE;
         }
 
         if (visibleTarget != null) {
@@ -168,10 +195,12 @@ public class Batter extends Robot {
             return true;
 
         // If your slot has become occupied, rotate to the next target.
-        if (targetType == TargetType.BASE) {
-            return !comms.isBaseBatterHeartbeatDead(commsBaseIndex);
-        } else if (targetType == TargetType.STADIUM) {
-            return !comms.isStadiumBatterHeartbeatDead(commsStadiumIndex);
+        if (targetType == TargetType.BASE || isTargetingBase) {
+            int baseSlot = util.getBaseSlot(target);
+            return baseSlot == -1 || !comms.isBaseBatterHeartbeatDead(baseSlot);
+        } else if (targetType == TargetType.STADIUM || isTargetingStadium) {
+            int stadiumSlot = util.getStadiumSlot(target);
+            return stadiumSlot == -1 || !comms.isStadiumBatterHeartbeatDead(stadiumSlot);
         }
 
         return false;
@@ -218,9 +247,11 @@ public class Batter extends Robot {
             } else {
                 Location newTarget = explore.getExplore3Target();
                 // If we reset the explore target, rotate target types
-                if (!target.equals(newTarget)) {
+                if (explore.changedExplore3Target) {
                     rotateTargetType();
                     loadNextTarget();
+                } else {
+                    target = newTarget;
                 }
             }
         }

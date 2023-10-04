@@ -18,13 +18,13 @@ public class Debug {
 
     public void println(boolean cond, String s) {
         if (VERBOSE && cond) {
-            uc.println("ID: " + uc.getInfo().getID() + "\tRound: " + uc.getRound() + "\t" + s);
+            uc.println("ID: " + robot.ID + "\tRound: " + uc.getRound() + "\t" + s);
         }
     }
 
     public void println(boolean cond, String s, int id) {
-        if (VERBOSE && cond && (id < 0 || uc.getInfo().getID() == id)) {
-            uc.println("ID: " + uc.getInfo().getID() + "\tRound: " + uc.getRound() + "\t" + s);
+        if (VERBOSE && cond && (id < 0 || robot.ID == id)) {
+            uc.println("ID: " + robot.ID + "\tRound: " + uc.getRound() + "\t" + s);
         }
     }
 

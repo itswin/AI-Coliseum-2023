@@ -63,7 +63,7 @@ public class Pitcher extends Robot {
             double score = 0;
             if (unit == null) {
                 score += 400;
-            } else if (unit.getID() == uc.getInfo().getID()) {
+            } else if (unit.getID() == ID) {
                 score += 600;
             } else if (unit.getTeam() != uc.getTeam()) {
                 score += 200;
@@ -198,9 +198,11 @@ public class Pitcher extends Robot {
             } else {
                 Location newTarget = explore.getExplore3Target();
                 // If we reset the explore target, rotate target types
-                if (!target.equals(newTarget)) {
+                if (explore.changedExplore3Target) {
                     rotateTargetType();
                     loadNextTarget();
+                } else {
+                    target = newTarget;
                 }
             }
         }

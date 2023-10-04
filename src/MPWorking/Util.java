@@ -488,16 +488,24 @@ public class Util {
     }
 
     public int getBaseSlot(Location loc) {
+        Location base;
         for (int i = 0; i < robot.comms.BASE_SLOTS; i++) {
-            if (robot.comms.readBase(i).equals(loc))
+            base = robot.comms.readBase(i);
+            if (base.x == -1)
+                break;
+            if (base.equals(loc))
                 return i;
         }
         return -1;
     }
 
     public int getStadiumSlot(Location loc) {
+        Location stadium;
         for (int i = 0; i < robot.comms.STADIUM_SLOTS; i++) {
-            if (robot.comms.readStadium(i).equals(loc))
+            stadium = robot.comms.readStadium(i);
+            if (stadium.x == -1)
+                break;
+            if (stadium.equals(loc))
                 return i;
         }
         return -1;
