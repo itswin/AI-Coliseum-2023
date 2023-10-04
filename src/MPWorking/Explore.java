@@ -267,12 +267,12 @@ public class Explore {
         return new Direction[] {
                 Direction.NORTH,
                 Direction.SOUTHWEST,
-                Direction.SOUTHEAST,
-                Direction.NORTHWEST,
                 Direction.EAST,
-                Direction.WEST,
-                Direction.NORTHEAST,
+                Direction.NORTHWEST,
                 Direction.SOUTH,
+                Direction.NORTHEAST,
+                Direction.WEST,
+                Direction.SOUTHEAST,
         };
     }
 }
