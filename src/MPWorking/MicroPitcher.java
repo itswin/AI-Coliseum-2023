@@ -63,8 +63,13 @@ public class MicroPitcher {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;
             currentUnit = units[i];
-            if (currentUnit.getType() != UnitType.BATTER)
-                continue;
+            if (currentUnit.getType() == UnitType.BATTER) {
+                currentActionRadius = RANGE_BATTER;
+                currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
+            } else {
+                currentActionRadius = 0;
+                currentExtendedActionRadius = 0;
+            }
             currentLoc = currentUnit.getLocation();
             microInfo[0].updateEnemy();
             microInfo[1].updateEnemy();
@@ -154,6 +159,8 @@ public class MicroPitcher {
         // Direction.ordinal() corresponds to the location a batter
         // needs to be in to hit the ball into an enemy
         Location[] ballPlacementAttackLocs = new Location[8];
+        float[] ballAttackScores = new float[8];
+        float maxBallAttackScore = 0;
         int allyAssistID = -1;
         Direction allyAssistDir = null;
         int allyScheduleDamageScore = 0;
@@ -220,6 +227,12 @@ public class MicroPitcher {
             UnitInfo unitInfo;
             MapObject mapObj;
             boolean lookedAhead = false;
+            Location nextLocation;
+            boolean canPlace = false;
+            int ballPlacementIndex;
+            // Just assign some positive cost to HQs.
+            float damageScore = currentUnit.getType() == UnitType.HQ ? 25
+                    : currentUnit.getType().getStat(UnitStat.REP_COST);
             for (int i = 0; i < 3; i++) {
                 if (lookedAhead) {
                     lookedAhead = false;
@@ -228,8 +241,16 @@ public class MicroPitcher {
                     if (!uc.canSenseLocation(potentialBall))
                         break;
                     unitInfo = uc.senseUnitAtLocation(potentialBall);
-                    if (unitInfo != null)
-                        break;
+                    if (unitInfo != null) {
+                        // You can hit through other units
+                        if (unitInfo.getType() == UnitType.CATCHER || unitInfo.getType() == UnitType.HQ)
+                            break;
+                        if (unitInfo.getTeam() == robot.team) {
+                            damageScore -= unitInfo.getType().getStat(UnitStat.REP_COST);
+                        } else {
+                            damageScore += unitInfo.getType().getStat(UnitStat.REP_COST);
+                        }
+                    }
                     mapObj = uc.senseObjectAtLocation(potentialBall, true);
                     if (mapObj == MapObject.WATER || mapObj == MapObject.BALL)
                         break;
@@ -237,22 +258,35 @@ public class MicroPitcher {
 
                 if (potentialBall.distanceSquared(location) <= ACTION_RANGE) {
                     // Check the next location to make sure that a batter can be there
-                    Location nextLocation = potentialBall.add(dir);
+                    nextLocation = potentialBall.add(dir);
+                    canPlace = true;
                     if (!uc.canSenseLocation(nextLocation))
                         break;
                     unitInfo = uc.senseUnitAtLocation(nextLocation);
-                    if (unitInfo != null && unitInfo.getType() != UnitType.BATTER) {
-                        break;
+                    if (unitInfo != null) {
+                        if (unitInfo.getType() == UnitType.CATCHER || unitInfo.getType() == UnitType.HQ)
+                            break;
+                        if (unitInfo.getTeam() == robot.team) {
+                            damageScore -= unitInfo.getType().getStat(UnitStat.REP_COST);
+                        } else {
+                            damageScore += unitInfo.getType().getStat(UnitStat.REP_COST);
+                        }
+                        canPlace = false;
                     }
                     mapObj = uc.senseObjectAtLocation(nextLocation, true);
                     if (mapObj == MapObject.WATER || mapObj == MapObject.BALL)
                         break;
-                    ballPlacementAttackLocs[location.directionTo(potentialBall).ordinal()] = nextLocation;
 
-                    // You can't place a ball in the next location if there is a batter
-                    if (unitInfo != null)
-                        break;
+                    if (canPlace) {
+                        ballPlacementIndex = location.directionTo(potentialBall).ordinal();
+                        if (damageScore > ballAttackScores[ballPlacementIndex]) {
+                            ballAttackScores[ballPlacementIndex] = damageScore;
+                            ballPlacementAttackLocs[ballPlacementIndex] = nextLocation;
+                        }
+                    }
+
                     lookedAhead = true;
+                    potentialBall = nextLocation;
                 }
             }
         }
@@ -278,9 +312,11 @@ public class MicroPitcher {
                 if (distToAttackLoc <= 2) {
                     if (uc.canSchedule(currentUnit.getID())) {
                         if (distToAttackLoc == 0 || currentUnit.getCurrentMovementCooldown() < 2) {
-                            allyAssistID = currentUnit.getID();
-                            allyAssistDir = dirs[i];
-                            break;
+                            if (ballAttackScores[i] > maxBallAttackScore) {
+                                allyAssistID = currentUnit.getID();
+                                allyAssistDir = dirs[i];
+                                maxBallAttackScore = ballAttackScores[i];
+                            }
                         }
                     } else {
                         allyScheduleDamageScore = 1;
@@ -312,9 +348,9 @@ public class MicroPitcher {
             if (M.battersTargeting < battersTargeting)
                 return false;
 
-            if (allyAssistID > M.allyAssistID)
+            if (maxBallAttackScore > M.maxBallAttackScore)
                 return true;
-            if (M.allyAssistID > allyAssistID)
+            if (M.maxBallAttackScore > maxBallAttackScore)
                 return false;
 
             if (possibleEnemyBatters < M.possibleEnemyBatters)
