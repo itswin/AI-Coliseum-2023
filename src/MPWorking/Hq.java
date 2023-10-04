@@ -34,6 +34,13 @@ public class Hq extends Robot {
 
     public boolean resourcesReflected;
 
+    public final int MIN_KILL_SWITCH_BATTERS = 10;
+    public final int BATTERS_TO_RESOURCES_RATIO = 2;
+    public final int KILL_SWITCH_COOLDOWN = 200;
+    public final int KILL_SWITCH_LENGTH = 50;
+    public int lastKillSwitchRound = 200;
+    public int numResources = 0;
+
     public Hq(UnitController u) {
         super(u);
         comms.init();
@@ -105,6 +112,7 @@ public class Hq extends Robot {
         switchState();
         doStateAction();
 
+        // tryActivateKillSwitch();
         comms.writeHqFlag(nextFlag);
         nextFlag = 0;
     }
@@ -146,7 +154,8 @@ public class Hq extends Robot {
     }
 
     public void normalAction() {
-        if (numPitchers * BATTERS_TO_PITCHERS_RATIO < numBatters) {
+        if (numPitchers * BATTERS_TO_PITCHERS_RATIO < numBatters ||
+                numPitchers < numResources / 2) {
             recruitType = UnitType.PITCHER;
         } else {
             recruitType = UnitType.BATTER;
@@ -221,11 +230,13 @@ public class Hq extends Robot {
     }
 
     public void decrementHeartbeats() {
+        numResources = 0;
         for (int i = 0; i < comms.BASE_SLOTS; i++) {
             if (comms.readBaseX(i) == -1)
                 break;
             comms.decrementBasePitcherHeartbeat(i);
             comms.decrementBaseBatterHeartbeat(i);
+            numResources++;
         }
 
         for (int i = 0; i < comms.STADIUM_SLOTS; i++) {
@@ -233,6 +244,7 @@ public class Hq extends Robot {
                 break;
             comms.decrementStadiumPitcherHeartbeat(i);
             comms.decrementStadiumBatterHeartbeat(i);
+            numResources++;
         }
     }
 
@@ -325,8 +337,20 @@ public class Hq extends Robot {
         int rotSym = comms.readSymmetryRotational();
 
         // Only one symmetry left, do not invalidate
-        if (vertSym + horizSym + rotSym == 1)
+        if (vertSym + horizSym + rotSym == 1) {
+            // Write the enemy HQ loc if it hasn't been written yet.
+            Location enemyHq = comms.readEnemyHq();
+            if (enemyHq.x == -1) {
+                Location[] symLocs = util.getValidSymmetryLocs(hq, vertSym == 1, horizSym == 1, rotSym == 1);
+                if (symLocs != null && symLocs.length == 1) {
+                    enemyHq = symLocs[0];
+                    comms.writeEnemyHq(enemyHq);
+                } else {
+                    return;
+                }
+            }
             return;
+        }
 
         int mapXMin = comms.readMapXMin();
         int mapXMax = comms.readMapXMax();
@@ -358,5 +382,37 @@ public class Hq extends Robot {
         } else if (uc.canConstructBall(dir.rotateRight())) {
             uc.constructBall(dir.rotateRight());
         }
+    }
+
+    public void tryActivateKillSwitch() {
+        if (uc.getRound() > KILL_SWITCH_LENGTH + lastKillSwitchRound) {
+            if (comms.readHqKillSwitch() == 1) {
+                comms.writeHqKillSwitch(0);
+                // debug.println("Deactivating kill switch");
+            }
+        }
+        if (numBatters < MIN_KILL_SWITCH_BATTERS)
+            return;
+        if (numBatters < BATTERS_TO_RESOURCES_RATIO * numResources)
+            return;
+        if (uc.getRound() - lastKillSwitchRound < KILL_SWITCH_COOLDOWN)
+            return;
+
+        int vertSym = comms.readSymmetryVertical();
+        int horizSym = comms.readSymmetryHorizontal();
+        int rotSym = comms.readSymmetryRotational();
+
+        // If symmetry not determined, do not activate
+        if (vertSym + horizSym + rotSym != 1)
+            return;
+
+        // It should have been written already, but just checking
+        Location enemyHq = comms.readEnemyHq();
+        if (enemyHq.x == -1)
+            return;
+
+        lastKillSwitchRound = uc.getRound();
+        comms.writeHqKillSwitch(1);
+        debug.println("Activating kill switch");
     }
 }

@@ -55,6 +55,8 @@ public class Robot {
 
     public boolean didMicro;
 
+    public boolean hasTeamSeenEnemy;
+
     public Robot(UnitController u) {
         uc = u;
 
@@ -105,6 +107,8 @@ public class Robot {
         enemyHqIndex = 0;
 
         didMicro = false;
+
+        hasTeamSeenEnemy = false;
     }
 
     public void initTurn() {
@@ -118,6 +122,15 @@ public class Robot {
         enemies = uc.senseUnits(VISION_RANGE, opponent);
         allies = uc.senseUnits(VISION_RANGE, team);
         computeClosestEnemyBatter();
+
+        if (!hasTeamSeenEnemy) {
+            if (comms.readSeenEnemy()) {
+                hasTeamSeenEnemy = true;
+            } else if (enemies.length > 0) {
+                hasTeamSeenEnemy = true;
+                comms.writeSeenEnemy(true);
+            }
+        }
     }
 
     public void takeTurn() {
@@ -169,5 +182,12 @@ public class Robot {
                 roundSeenEnemyBatter = uc.getRound();
             }
         }
+    }
+
+    public void checkKillSwitch() {
+        if (comms.readHqKillSwitch() == 0)
+            return;
+
+        target = comms.readEnemyHq();
     }
 }

@@ -22,6 +22,7 @@ SCHEMA = {
             'flag',
             'x_coord',
             'y_coord',
+            'kill_switch',
         ]
     },
     'symmetry': {
@@ -77,6 +78,20 @@ SCHEMA = {
             'id',
         ]
     },
+    'enemy_hq': {
+        'slots': 1,
+        'fields': [
+            'x',
+            'y',
+        ],
+        'is_loc': True,
+    },
+    'bool': {
+        'slots': 1,
+        'fields': [
+            'seen_enemy',
+        ],
+    }
 }
 
 def capitalize(s):
@@ -116,6 +131,18 @@ def gen():
         write{capitalize(datatype)}{capitalize(field)}(0);
     }}
 """
+                
+                if datatype == 'bool':
+                    out += f"""
+    public boolean read{capitalize(field)}() {{
+        return read{capitalize(datatype)}{capitalize(field)}() == 1;
+    }}
+
+    public void write{capitalize(field)}(boolean value) {{
+        write{capitalize(datatype)}{capitalize(field)}(value ? 1 : 0);
+    }}
+"""
+
             else:
                 if datatype == 'shared_map':
                     out += f"""
@@ -157,7 +184,19 @@ def gen():
 
             fields_so_far += SCHEMA[datatype]['slots']
         if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
-            out += f"""
+            if SCHEMA[datatype]['slots'] == 1:
+                out += f"""
+    public Location read{capitalize(datatype)}() {{
+        return new Location(read{capitalize(datatype)}X(), read{capitalize(datatype)}Y());
+    }}
+
+    public void write{capitalize(datatype)}(Location loc) {{
+        write{capitalize(datatype)}X(loc.x);
+        write{capitalize(datatype)}Y(loc.y);
+    }}
+"""
+            else:
+                out += f"""
     public Location read{capitalize(datatype)}(int slot) {{
         return new Location(read{capitalize(datatype)}X(slot), read{capitalize(datatype)}Y(slot));
     }}
@@ -193,7 +232,14 @@ def gen_init_loc_methods():
     out = """"""
     for datatype in SCHEMA:
         if 'is_loc' in SCHEMA[datatype] and SCHEMA[datatype]['is_loc']:
-            out += f"""
+            if SCHEMA[datatype]['slots'] == 1:
+                out += f"""
+    public void init{capitalize(datatype)}() {{
+        write{capitalize(datatype)}(new Location(-1, -1));
+    }}
+                """
+            else:
+                out += f"""
     public void init{capitalize(datatype)}() {{
         for (int i = {datatype.upper()}_SLOTS; --i >= 0;) {{
             write{capitalize(datatype)}(i, new Location(-1, -1));

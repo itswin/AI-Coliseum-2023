@@ -94,7 +94,7 @@ public class Batter extends Robot {
             targetType = TargetType.BASE;
         }
 
-        if (visibleTarget != null) {
+        if (visibleTarget != null && hasTeamSeenEnemy) {
             target = visibleTarget;
         }
     }
@@ -139,6 +139,8 @@ public class Batter extends Robot {
                     }
                 }
             }
+
+            // checkKillSwitch();
 
             // If you've ended up on the target due to micro, then move off of it.
             if (uc.getLocation().equals(target)) {
@@ -247,7 +249,7 @@ public class Batter extends Robot {
             } else {
                 Location newTarget = explore.getExplore3Target();
                 // If we reset the explore target, rotate target types
-                if (explore.changedExplore3Target) {
+                if (hasTeamSeenEnemy && explore.changedExplore3Target) {
                     rotateTargetType();
                     loadNextTarget();
                 } else {

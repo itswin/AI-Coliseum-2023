@@ -35,6 +35,8 @@ public class Comms {
     public final int NUM_SLOTS = 1;
     public final int SHARED_MAP_SLOTS = 14641;
     public final int SCHEDULE_SLOTS = 32;
+    public final int ENEMY_HQ_SLOTS = 1;
+    public final int BOOL_SLOTS = 1;
 
     public Comms(UnitController u, Robot r) {
         uc = u;
@@ -55,6 +57,7 @@ public class Comms {
         initSymmetry();
         initBase();
         initStadium();
+        initEnemyHq();
     }
 
     public void initMap() {
@@ -111,6 +114,10 @@ public class Comms {
         }
     }
 
+    public void initEnemyHq() {
+        writeEnemyHq(new Location(-1, -1));
+    }
+                
     public int readMapXMin() {
         return uc.read(0);
     }
@@ -191,52 +198,60 @@ public class Comms {
         uc.write(9, value);
     }
 
-    public int readSymmetryVertical() {
+    public int readHqKillSwitch() {
         return uc.read(10);
     }
 
-    public void writeSymmetryVertical(int value) {
+    public void writeHqKillSwitch(int value) {
         uc.write(10, value);
     }
 
-    public int readSymmetryHorizontal() {
+    public int readSymmetryVertical() {
         return uc.read(11);
     }
 
-    public void writeSymmetryHorizontal(int value) {
+    public void writeSymmetryVertical(int value) {
         uc.write(11, value);
     }
 
-    public int readSymmetryRotational() {
+    public int readSymmetryHorizontal() {
         return uc.read(12);
     }
 
-    public void writeSymmetryRotational(int value) {
+    public void writeSymmetryHorizontal(int value) {
         uc.write(12, value);
     }
 
+    public int readSymmetryRotational() {
+        return uc.read(13);
+    }
+
+    public void writeSymmetryRotational(int value) {
+        uc.write(13, value);
+    }
+
     public int readBaseX(int slot) {
-        return uc.read(13 + slot);
+        return uc.read(14 + slot);
     }
 
     public void writeBaseX(int slot, int value) {
-        uc.write(13 + slot, value);
+        uc.write(14 + slot, value);
     }
 
     public int readBaseY(int slot) {
-        return uc.read(29 + slot);
+        return uc.read(30 + slot);
     }
 
     public void writeBaseY(int slot, int value) {
-        uc.write(29 + slot, value);
+        uc.write(30 + slot, value);
     }
 
     public int readBasePitcherHeartbeat(int slot) {
-        return uc.read(45 + slot);
+        return uc.read(46 + slot);
     }
 
     public void writeBasePitcherHeartbeat(int slot, int value) {
-        uc.write(45 + slot, value);
+        uc.write(46 + slot, value);
     }
 
     public void sendBasePitcherHeartbeat(int slot) {
@@ -255,11 +270,11 @@ public class Comms {
     }
 
     public int readBaseBatterHeartbeat(int slot) {
-        return uc.read(61 + slot);
+        return uc.read(62 + slot);
     }
 
     public void writeBaseBatterHeartbeat(int slot, int value) {
-        uc.write(61 + slot, value);
+        uc.write(62 + slot, value);
     }
 
     public void sendBaseBatterHeartbeat(int slot) {
@@ -302,27 +317,27 @@ public class Comms {
     }
 
     public int readStadiumX(int slot) {
-        return uc.read(77 + slot);
+        return uc.read(78 + slot);
     }
 
     public void writeStadiumX(int slot, int value) {
-        uc.write(77 + slot, value);
+        uc.write(78 + slot, value);
     }
 
     public int readStadiumY(int slot) {
-        return uc.read(93 + slot);
+        return uc.read(94 + slot);
     }
 
     public void writeStadiumY(int slot, int value) {
-        uc.write(93 + slot, value);
+        uc.write(94 + slot, value);
     }
 
     public int readStadiumPitcherHeartbeat(int slot) {
-        return uc.read(109 + slot);
+        return uc.read(110 + slot);
     }
 
     public void writeStadiumPitcherHeartbeat(int slot, int value) {
-        uc.write(109 + slot, value);
+        uc.write(110 + slot, value);
     }
 
     public void sendStadiumPitcherHeartbeat(int slot) {
@@ -341,11 +356,11 @@ public class Comms {
     }
 
     public int readStadiumBatterHeartbeat(int slot) {
-        return uc.read(125 + slot);
+        return uc.read(126 + slot);
     }
 
     public void writeStadiumBatterHeartbeat(int slot, int value) {
-        uc.write(125 + slot, value);
+        uc.write(126 + slot, value);
     }
 
     public void sendStadiumBatterHeartbeat(int slot) {
@@ -388,11 +403,11 @@ public class Comms {
     }
 
     public int readNumPitchers() {
-        return uc.read(141);
+        return uc.read(142);
     }
 
     public void writeNumPitchers(int value) {
-        uc.write(141, value);
+        uc.write(142, value);
     }
 
     public void incrementPitchers() {
@@ -404,19 +419,19 @@ public class Comms {
     }
 
     public int readNumPitchersLast() {
-        return uc.read(142);
-    }
-
-    public void writeNumPitchersLast(int value) {
-        uc.write(142, value);
-    }
-
-    public int readNumBatters() {
         return uc.read(143);
     }
 
-    public void writeNumBatters(int value) {
+    public void writeNumPitchersLast(int value) {
         uc.write(143, value);
+    }
+
+    public int readNumBatters() {
+        return uc.read(144);
+    }
+
+    public void writeNumBatters(int value) {
+        uc.write(144, value);
     }
 
     public void incrementBatters() {
@@ -428,19 +443,19 @@ public class Comms {
     }
 
     public int readNumBattersLast() {
-        return uc.read(144);
-    }
-
-    public void writeNumBattersLast(int value) {
-        uc.write(144, value);
-    }
-
-    public int readNumCatchers() {
         return uc.read(145);
     }
 
-    public void writeNumCatchers(int value) {
+    public void writeNumBattersLast(int value) {
         uc.write(145, value);
+    }
+
+    public int readNumCatchers() {
+        return uc.read(146);
+    }
+
+    public void writeNumCatchers(int value) {
+        uc.write(146, value);
     }
 
     public void incrementCatchers() {
@@ -452,27 +467,68 @@ public class Comms {
     }
 
     public int readNumCatchersLast() {
-        return uc.read(146);
+        return uc.read(147);
     }
 
     public void writeNumCatchersLast(int value) {
-        uc.write(146, value);
+        uc.write(147, value);
     }
 
     public int readSharedMapTileType(Location mapLoc) {
-        return uc.read(147 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY));
+        return uc.read(148 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY));
     }
 
     public void writeSharedMapTileType(Location mapLoc, int value) {
-        uc.write(147 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY), value);
+        uc.write(148 + (mapLoc.x + mapOffsetX) * SHARED_MAP_SIZE + (mapLoc.y + mapOffsetY), value);
     }
 
     public int readScheduleId(int slot) {
-        return uc.read(14788 + slot);
+        return uc.read(14789 + slot);
     }
 
     public void writeScheduleId(int slot, int value) {
-        uc.write(14788 + slot, value);
+        uc.write(14789 + slot, value);
+    }
+
+    public int readEnemyHqX() {
+        return uc.read(14821);
+    }
+
+    public void writeEnemyHqX(int value) {
+        uc.write(14821, value);
+    }
+
+    public int readEnemyHqY() {
+        return uc.read(14822);
+    }
+
+    public void writeEnemyHqY(int value) {
+        uc.write(14822, value);
+    }
+
+    public Location readEnemyHq() {
+        return new Location(readEnemyHqX(), readEnemyHqY());
+    }
+
+    public void writeEnemyHq(Location loc) {
+        writeEnemyHqX(loc.x);
+        writeEnemyHqY(loc.y);
+    }
+
+    public int readBoolSeenEnemy() {
+        return uc.read(14823);
+    }
+
+    public void writeBoolSeenEnemy(int value) {
+        uc.write(14823, value);
+    }
+
+    public boolean readSeenEnemy() {
+        return readBoolSeenEnemy() == 1;
+    }
+
+    public void writeSeenEnemy(boolean value) {
+        writeBoolSeenEnemy(value ? 1 : 0);
     }
 
 }

@@ -101,6 +101,12 @@ public class Pitcher extends Robot {
             target = visibleTarget;
         }
 
+        // If you're not standing on a resource, check kill switch
+        // MapObject resource = uc.senseObjectAtLocation(currentLoc, false);
+        // if (resource != MapObject.STADIUM && resource != MapObject.BASE) {
+        // checkKillSwitch();
+        // }
+
         if (!didMicro) {
             nav.move(target);
         }
