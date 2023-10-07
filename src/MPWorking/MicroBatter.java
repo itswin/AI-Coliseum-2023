@@ -5,7 +5,6 @@ import aic2023.user.*;
 public class MicroBatter {
 
     final int INF = 1000000;
-    boolean alwaysInRange = false;
     float ACTION_RANGE;
     float VISION_RANGE;
 
@@ -40,6 +39,7 @@ public class MicroBatter {
         VISION_RANGE = robot.VISION_RANGE;
     }
 
+    boolean alwaysInRange;
     double currentActionRadius;
     double currentExtendedActionRadius;
     boolean canAttack;
@@ -47,6 +47,7 @@ public class MicroBatter {
     Location currentLoc;
     UnitInfo currentUnit;
     boolean isArmedEnemyPitcher;
+    int numBatters;
 
     boolean doMicro() {
         UnitInfo[] units = robot.enemies;
@@ -55,10 +56,7 @@ public class MicroBatter {
         canAttack = uc.canAct();
         canGlobalMove = uc.canMove();
         isArmedEnemyPitcher = false;
-
-        alwaysInRange = false;
-        if (!canAttack)
-            alwaysInRange = true;
+        numBatters = 0;
 
         MicroInfo[] microInfo = new MicroInfo[9];
         int i = 9;
@@ -91,6 +89,7 @@ public class MicroBatter {
             if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
+                numBatters++;
             } else if (currentUnit.getType() == UnitType.HQ) {
                 currentActionRadius = RANGE_HQ;
                 currentExtendedActionRadius = RANGE_EXTENDED_HQ;
@@ -101,8 +100,6 @@ public class MicroBatter {
 
             currentLoc = currentUnit.getLocation();
 
-            // if (!robot.util.seesObstacleInWay(currentLoc))
-            // isThreatened = true;
             if (!isThreatened && robot.nav.Bfs20.existsPathTo(currentLoc))
                 isThreatened = true;
 
@@ -177,6 +174,8 @@ public class MicroBatter {
                 bestMicro.allyBatStrength = 0;
             }
         }
+
+        alwaysInRange = !canAttack || numBatters >= 2 || (isArmedEnemyPitcher && numBatters > 0);
 
         i = 8;
         for (; --i >= 0;) {
@@ -523,7 +522,7 @@ public class MicroBatter {
 
             // If we can't guarantee a kill, check possible enemy kills on us first.
             if (enemyDamageScore < 35 && M.enemyDamageScore < 35) {
-                if (isArmedEnemyPitcher && !isSupported) {
+                if (inRange() && !isSupported) {
                     if (possibleEnemyAssists < M.possibleEnemyAssists)
                         return true;
                     if (possibleEnemyAssists > M.possibleEnemyAssists)
@@ -546,7 +545,7 @@ public class MicroBatter {
             if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
 
-            if (isArmedEnemyPitcher && !isSupported) {
+            if (inRange() && !isSupported) {
                 if (possibleEnemyAssists < M.possibleEnemyAssists)
                     return true;
                 if (possibleEnemyAssists > M.possibleEnemyAssists)

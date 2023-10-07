@@ -34,12 +34,14 @@ public class MicroPitcher {
         ACTION_RANGE = robot.ACTION_RANGE;
     }
 
+    boolean alwaysInRange;
     double currentActionRadius;
     double currentExtendedActionRadius;
     boolean canAttack;
     Location currentLoc;
     UnitInfo currentUnit;
     boolean isArmedEnemyPitcher;
+    int numBatters;
 
     boolean doMicro() {
         if (!uc.canMove())
@@ -69,6 +71,7 @@ public class MicroPitcher {
             if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
+                numBatters++;
             } else {
                 currentActionRadius = 0;
                 currentExtendedActionRadius = 0;
@@ -105,8 +108,30 @@ public class MicroPitcher {
             microInfo[8].updateAlly();
         }
 
+        alwaysInRange = !canAttack || numBatters >= 2 || (isArmedEnemyPitcher && numBatters > 0);
+
         MicroInfo bestMicro = microInfo[8];
         if (canAttack) {
+            // If no movement is the best damage, attack first.
+            boolean isZeroBestAttack = true;
+            i = 8;
+            if (canAttack) {
+                for (; --i >= 0;) {
+                    if (microInfo[i].isBetterAttack(bestMicro)) {
+                        isZeroBestAttack = false;
+                        break;
+                    }
+                }
+
+                if (isZeroBestAttack) {
+                    applyAttack(bestMicro);
+                    // Ignore the zero direction's attack scores
+                    bestMicro.maxBallAttackScore = 0;
+                    bestMicro.allyScheduleDamageScore = 0;
+                    bestMicro.allyAssistID = -1;
+                }
+            }
+
             i = 8;
             for (; --i >= 0;) {
                 if (microInfo[i].isBetter(bestMicro)) {
@@ -126,27 +151,31 @@ public class MicroPitcher {
     }
 
     boolean apply(MicroInfo bestMicro) {
-        boolean didMicro = false;
         if (bestMicro.dir != Direction.ZERO) {
             if (uc.canMove(bestMicro.dir)) {
                 uc.move(bestMicro.dir);
-                didMicro = true;
+                applyAttack(bestMicro);
+                return true;
             }
         } else {
-            didMicro = true;
+            applyAttack(bestMicro);
+            return true;
         }
 
+        return false;
+    }
+
+    boolean applyAttack(MicroInfo bestMicro) {
         if (bestMicro.allyAssistID != -1) {
             if (uc.canSchedule(bestMicro.allyAssistID) && uc.canMoveBall(bestMicro.allyAssistDir)) {
                 uc.schedule(bestMicro.allyAssistID);
                 uc.moveBall(bestMicro.allyAssistDir);
-                didMicro = true;
+                return true;
             }
         } else if (bestMicro.allyScheduleDamageScore > 0) {
             robot.comms.scheduleId(robot.ID);
         }
-
-        return didMicro;
+        return false;
     }
 
     class MicroInfo {
@@ -351,6 +380,8 @@ public class MicroPitcher {
         }
 
         boolean inRange() {
+            if (alwaysInRange)
+                return true;
             return minDistanceToEnemy <= ACTION_RANGE;
         }
 
@@ -363,7 +394,7 @@ public class MicroPitcher {
 
             // If we can't guarantee a kill, check possible enemy kills on us first.
             if (maxBallAttackScore < 35 && M.maxBallAttackScore < 35) {
-                if (isArmedEnemyPitcher && !isSupported) {
+                if (inRange() && !isSupported) {
                     if (possibleEnemyAssists < M.possibleEnemyAssists)
                         return true;
                     if (possibleEnemyAssists > M.possibleEnemyAssists)
@@ -386,7 +417,7 @@ public class MicroPitcher {
             if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
 
-            if (isArmedEnemyPitcher && !isSupported) {
+            if (inRange() && !isSupported) {
                 if (possibleEnemyAssists < M.possibleEnemyAssists)
                     return true;
                 if (possibleEnemyAssists > M.possibleEnemyAssists)
@@ -408,7 +439,10 @@ public class MicroPitcher {
             if (M.dir == Direction.ZERO)
                 return false;
 
-            return minDistanceToEnemy <= M.minDistanceToEnemy;
+            if (inRange())
+                return minDistanceToEnemy >= M.minDistanceToEnemy;
+            else
+                return minDistanceToEnemy <= M.minDistanceToEnemy;
         }
 
         boolean isBetterForFleeing(MicroInfo M) {
@@ -427,7 +461,23 @@ public class MicroPitcher {
             if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
 
+            if (inRange() && !isSupported) {
+                if (possibleEnemyAssists < M.possibleEnemyAssists)
+                    return true;
+                if (possibleEnemyAssists > M.possibleEnemyAssists)
+                    return false;
+            }
+
             return minDistanceToEnemy > M.minDistanceToEnemy;
+        }
+
+        boolean isBetterAttack(MicroInfo M) {
+            if (maxBallAttackScore > M.maxBallAttackScore)
+                return true;
+            if (M.maxBallAttackScore > maxBallAttackScore)
+                return false;
+
+            return allyScheduleDamageScore > M.allyScheduleDamageScore;
         }
     }
 }
