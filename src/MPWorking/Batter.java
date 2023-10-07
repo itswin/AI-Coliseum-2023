@@ -144,7 +144,12 @@ public class Batter extends Robot {
 
             // If you've ended up on the target due to micro, then move off of it.
             if (uc.getLocation().equals(target)) {
-                shouldNav = true;
+                shouldNav = false;
+                for (Direction dir : util.directions) {
+                    if (uc.canMove(dir)) {
+                        uc.move(dir);
+                    }
+                }
             }
 
             if (shouldNav) {

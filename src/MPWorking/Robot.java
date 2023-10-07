@@ -155,7 +155,7 @@ public class Robot {
     public boolean shouldLoadNextTarget() {
         // Always load next target if exploring
         if (target == null ||
-        // uc.getLocation().distanceSquared(target) <= 2 ||
+                uc.getLocation().distanceSquared(target) <= 2 ||
                 targetType == TargetType.EXPLORE ||
                 uc.getRound() > turnShouldHaveSeenTarget)
             return true;
@@ -164,11 +164,19 @@ public class Robot {
         if (targetType == TargetType.BASE || isTargetingBase) {
             if (uc.getLocation().equals(target))
                 return false;
+            if (uc.getType() == UnitType.PITCHER &&
+                    roundSeenEnemyBatter == uc.getRound() &&
+                    uc.getLocation().distanceSquared(target) <= VISION_RANGE)
+                return true;
             int baseSlot = util.getBaseSlot(target);
             return baseSlot == -1 || isBaseOccupied(baseSlot);
         } else if (targetType == TargetType.STADIUM || isTargetingStadium) {
             if (uc.getLocation().equals(target))
                 return false;
+            if (uc.getType() == UnitType.PITCHER &&
+                    roundSeenEnemyBatter == uc.getRound() &&
+                    uc.getLocation().distanceSquared(target) <= VISION_RANGE)
+                return true;
             int stadiumSlot = util.getStadiumSlot(target);
             return stadiumSlot == -1 || isStadiumOccupied(stadiumSlot);
         }
