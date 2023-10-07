@@ -7,6 +7,7 @@ public class MicroPitcher {
     final int INF = 1000000;
     float ACTION_RANGE;
 
+    final int RANGE_EXTENDED_BALL_BATTER = 16;
     final float RANGE_EXTENDED_BATTER = 8;
     final float RANGE_BATTER = 2;
 
@@ -38,6 +39,7 @@ public class MicroPitcher {
     boolean canAttack;
     Location currentLoc;
     UnitInfo currentUnit;
+    boolean isArmedEnemyPitcher;
 
     boolean doMicro() {
         if (!uc.canMove())
@@ -47,6 +49,7 @@ public class MicroPitcher {
             return false;
 
         canAttack = uc.getInfo().isCarryingBall() && uc.canAct();
+        isArmedEnemyPitcher = false;
 
         MicroInfo[] microInfo = new MicroInfo[9];
         int i = 9;
@@ -153,6 +156,8 @@ public class MicroPitcher {
 
         int battersTargeting = 0;
         int possibleEnemyBatters = 0;
+        int possibleEnemyAssists = 0;
+        boolean isSupported = false;
         boolean canMove = true;
 
         int minDistToAlly = INF;
@@ -185,6 +190,10 @@ public class MicroPitcher {
                 ++battersTargeting;
             if (dist <= currentExtendedActionRadius)
                 possibleEnemyBatters++;
+            if (!isArmedEnemyPitcher && currentUnit.isCarryingBall())
+                isArmedEnemyPitcher = true;
+            if (dist <= RANGE_EXTENDED_BALL_BATTER && currentUnit.getType() == UnitType.BATTER)
+                possibleEnemyAssists++;
 
             if (currentUnit.getType() == UnitType.CATCHER)
                 return;
@@ -311,6 +320,8 @@ public class MicroPitcher {
             // Unit type is always batter
             if (dist < minDistToAlly)
                 minDistToAlly = dist;
+            if (currentUnit.getType() == UnitType.BATTER || currentUnit.isCarryingBall())
+                isSupported = true;
 
             // Loop through all valid ball placements.
             // If the current unit is adjacent to the attack location,
@@ -339,22 +350,26 @@ public class MicroPitcher {
             }
         }
 
-        int safe() {
-            if (!canMove)
-                return -1;
-            return 1;
-        }
-
         boolean inRange() {
             return minDistanceToEnemy <= ACTION_RANGE;
         }
 
         // equal => true
         boolean isBetter(MicroInfo M) {
-            if (safe() > M.safe())
+            if (canMove && !M.canMove)
                 return true;
-            if (safe() < M.safe())
+            if (!canMove && M.canMove)
                 return false;
+
+            // If we can't guarantee a kill, check possible enemy kills on us first.
+            if (maxBallAttackScore < 35 && M.maxBallAttackScore < 35) {
+                if (isArmedEnemyPitcher && !isSupported) {
+                    if (possibleEnemyAssists < M.possibleEnemyAssists)
+                        return true;
+                    if (possibleEnemyAssists > M.possibleEnemyAssists)
+                        return false;
+                }
+            }
 
             if (battersTargeting < M.battersTargeting)
                 return true;
@@ -370,6 +385,13 @@ public class MicroPitcher {
                 return true;
             if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
+
+            if (isArmedEnemyPitcher && !isSupported) {
+                if (possibleEnemyAssists < M.possibleEnemyAssists)
+                    return true;
+                if (possibleEnemyAssists > M.possibleEnemyAssists)
+                    return false;
+            }
 
             if (allyScheduleDamageScore > M.allyScheduleDamageScore)
                 return true;
@@ -390,9 +412,9 @@ public class MicroPitcher {
         }
 
         boolean isBetterForFleeing(MicroInfo M) {
-            if (safe() > M.safe())
+            if (canMove && !M.canMove)
                 return true;
-            if (safe() < M.safe())
+            if (!canMove && M.canMove)
                 return false;
 
             if (battersTargeting < M.battersTargeting)

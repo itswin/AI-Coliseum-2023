@@ -9,6 +9,7 @@ public class MicroBatter {
     float ACTION_RANGE;
     float VISION_RANGE;
 
+    final int RANGE_EXTENDED_BALL_BATTER = 16;
     final int RANGE_EXTENDED_BATTER = 8;
     final int RANGE_BATTER = 2;
 
@@ -45,6 +46,7 @@ public class MicroBatter {
     boolean canGlobalMove;
     Location currentLoc;
     UnitInfo currentUnit;
+    boolean isArmedEnemyPitcher;
 
     boolean doMicro() {
         UnitInfo[] units = robot.enemies;
@@ -52,6 +54,7 @@ public class MicroBatter {
             return false;
         canAttack = uc.canAct();
         canGlobalMove = uc.canMove();
+        isArmedEnemyPitcher = false;
 
         alwaysInRange = false;
         if (!canAttack)
@@ -252,6 +255,7 @@ public class MicroBatter {
         int enemyBatStrength = 0;
         int battersAttackRange = 0;
         int possibleEnemyBatters = 0;
+        int possibleEnemyAssists = 0;
         int minDistToAlly = INF;
         Location enemyTarget = null;
         Location allyTarget = null;
@@ -260,6 +264,7 @@ public class MicroBatter {
         int allyId = 0;
         float allyScheduleDamageScore = 0;
         boolean canMove = true;
+        boolean isSupported = false;
 
         public MicroInfo(Direction dir) {
             this.dir = dir;
@@ -285,6 +290,10 @@ public class MicroBatter {
                 battersAttackRange++;
             if (dist <= currentExtendedActionRadius)
                 possibleEnemyBatters++;
+            if (!isArmedEnemyPitcher && currentUnit.isCarryingBall())
+                isArmedEnemyPitcher = true;
+            if (dist <= RANGE_EXTENDED_BALL_BATTER && currentUnit.getType() == UnitType.BATTER)
+                possibleEnemyAssists++;
             if (dist <= ACTION_RANGE && canAttack) {
                 // Calculate a score based on how much "damage"
                 // you deal by batting this enemy.
@@ -361,6 +370,8 @@ public class MicroBatter {
             int dist = currentLoc.distanceSquared(location);
             if (dist < minDistToAlly && currentUnit.getType() == UnitType.BATTER)
                 minDistToAlly = dist;
+            if (currentUnit.getType() == UnitType.BATTER || currentUnit.isCarryingBall())
+                isSupported = true;
 
             // If the ally is adjacent to this location and we can schedule it,
             // calculate a score based on potential damage dealt to the enemy.
@@ -401,8 +412,6 @@ public class MicroBatter {
                         if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                             break;
                         currentEnemy = enemyUnits[i];
-                        if (currentEnemy.getType() != UnitType.BATTER)
-                            continue;
                         // Note: battedAllyLoc should never be where an enemy is now.
                         damageScore += 15.0 - battedAllyLoc.distanceSquared(currentEnemy.getLocation());
                     }
@@ -512,6 +521,16 @@ public class MicroBatter {
             if (!canMove && M.canMove)
                 return false;
 
+            // If we can't guarantee a kill, check possible enemy kills on us first.
+            if (enemyDamageScore < 35 && M.enemyDamageScore < 35) {
+                if (isArmedEnemyPitcher && !isSupported) {
+                    if (possibleEnemyAssists < M.possibleEnemyAssists)
+                        return true;
+                    if (possibleEnemyAssists > M.possibleEnemyAssists)
+                        return false;
+                }
+            }
+
             if (enemyDamageScore > M.enemyDamageScore)
                 return true;
             if (enemyDamageScore < M.enemyDamageScore)
@@ -526,6 +545,13 @@ public class MicroBatter {
                 return true;
             if (possibleEnemyBatters > M.possibleEnemyBatters)
                 return false;
+
+            if (isArmedEnemyPitcher && !isSupported) {
+                if (possibleEnemyAssists < M.possibleEnemyAssists)
+                    return true;
+                if (possibleEnemyAssists > M.possibleEnemyAssists)
+                    return false;
+            }
 
             if (allyDamageScore > M.allyDamageScore)
                 return true;
