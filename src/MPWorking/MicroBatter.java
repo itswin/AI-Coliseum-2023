@@ -100,8 +100,10 @@ public class MicroBatter {
 
             currentLoc = currentUnit.getLocation();
 
-            if (!isThreatened && robot.nav.Bfs20.existsPathTo(currentLoc))
+            if (robot.nav.Bfs20.existsPathTo(currentLoc))
                 isThreatened = true;
+            else
+                continue;
 
             microInfo[0].updateEnemy();
             microInfo[1].updateEnemy();

@@ -46,9 +46,13 @@ public class Batter extends Robot {
         Location currentLoc = uc.getLocation();
         ToDoubleBiFunction<Location, Boolean> pred = (loc, isAdj) -> {
             Location[] adjLocs = util.getAdjLocs(loc);
+            UnitInfo unit;
             double score = 100;
-            for (Location adjLoc : adjLocs) {
-                UnitInfo unit = uc.senseUnitAtLocation(adjLoc);
+            int i = adjLocs.length;
+            Location adjLoc;
+            for (; --i >= 0;) {
+                adjLoc = adjLocs[i];
+                unit = uc.senseUnitAtLocation(adjLoc);
                 if (unit != null &&
                         unit.getTeam() == uc.getTeam() &&
                         unit.getType() == UnitType.BATTER &&
