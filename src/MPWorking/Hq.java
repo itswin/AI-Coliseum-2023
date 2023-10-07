@@ -155,7 +155,8 @@ public class Hq extends Robot {
 
     public void normalAction() {
         if (numPitchers * BATTERS_TO_PITCHERS_RATIO < numBatters ||
-                numPitchers < numResources / 2) {
+                numPitchers < numResources / 2 ||
+                (!hasTeamSeenEnemy && numPitchers < numResources && numPitchers < numBatters)) {
             recruitType = UnitType.PITCHER;
         } else {
             recruitType = UnitType.BATTER;

@@ -10,10 +10,6 @@ public class Batter extends Robot {
 
     MicroBatter microBatter;
 
-    boolean isExploring;
-    boolean isTargetingBase;
-    boolean isTargetingStadium;
-
     public Batter(UnitController u) {
         super(u);
         microBatter = new MicroBatter(uc, this);
@@ -99,7 +95,7 @@ public class Batter extends Robot {
         }
 
         if (visibleTarget != null && hasTeamSeenEnemy) {
-            target = visibleTarget;
+            setTarget(visibleTarget);
         }
     }
 
@@ -182,7 +178,7 @@ public class Batter extends Robot {
     public void rotateTargetType() {
         if (targetType == TargetType.STADIUM) {
             targetType = TargetType.BASE;
-            commsBaseIndex = 0;
+            baseVisited = new boolean[comms.BASE_SLOTS];
         } else if (targetType == TargetType.BASE) {
             targetType = TargetType.ENEMY_HQ;
             enemyHqIndex = 0;
@@ -191,48 +187,21 @@ public class Batter extends Robot {
             justStartedExploring = true;
         } else if (targetType == TargetType.EXPLORE) {
             targetType = TargetType.STADIUM;
-            commsStadiumIndex = 0;
+            stadiumVisited = new boolean[comms.STADIUM_SLOTS];
         }
-    }
-
-    @Override
-    public boolean shouldLoadNextTarget() {
-        if (super.shouldLoadNextTarget())
-            return true;
-
-        // If your slot has become occupied, rotate to the next target.
-        if (targetType == TargetType.BASE || isTargetingBase) {
-            int baseSlot = util.getBaseSlot(target);
-            return baseSlot == -1 || !comms.isBaseBatterHeartbeatDead(baseSlot);
-        } else if (targetType == TargetType.STADIUM || isTargetingStadium) {
-            int stadiumSlot = util.getStadiumSlot(target);
-            return stadiumSlot == -1 || !comms.isStadiumBatterHeartbeatDead(stadiumSlot);
-        }
-
-        return false;
     }
 
     public void loadNextTarget() {
         if (targetType == TargetType.BASE) {
-            while (commsBaseIndex < comms.BASE_SLOTS &&
-                    (target = comms.readBase(commsBaseIndex)).x != -1) {
-                if (comms.isBaseBatterHeartbeatDead(commsBaseIndex)) {
-                    return;
-                }
-                commsBaseIndex++;
+            if (!loadNextBase()) {
+                rotateTargetType();
+                loadNextTarget();
             }
-            rotateTargetType();
-            loadNextTarget();
         } else if (targetType == TargetType.STADIUM) {
-            while (commsStadiumIndex < comms.STADIUM_SLOTS &&
-                    (target = comms.readStadium(commsStadiumIndex)).x != -1) {
-                if (comms.isStadiumBatterHeartbeatDead(commsStadiumIndex)) {
-                    return;
-                }
-                commsStadiumIndex++;
+            if (!loadNextStadium()) {
+                rotateTargetType();
+                loadNextTarget();
             }
-            rotateTargetType();
-            loadNextTarget();
         } else if (targetType == TargetType.ENEMY_HQ) {
             if (!util.mapBoundsInitialized) {
                 rotateTargetType();
@@ -243,12 +212,12 @@ public class Batter extends Robot {
                     rotateTargetType();
                     loadNextTarget();
                 } else {
-                    target = enemyHqLocations[enemyHqIndex++];
+                    setTarget(enemyHqLocations[enemyHqIndex++]);
                 }
             }
         } else if (targetType == TargetType.EXPLORE) {
             if (justStartedExploring) {
-                target = explore.getExplore3Target();
+                setTarget(explore.getExplore3Target());
                 justStartedExploring = false;
             } else {
                 Location newTarget = explore.getExplore3Target();
@@ -257,9 +226,19 @@ public class Batter extends Robot {
                     rotateTargetType();
                     loadNextTarget();
                 } else {
-                    target = newTarget;
+                    setTarget(newTarget);
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isBaseOccupied(int slot) {
+        return !comms.isBaseBatterHeartbeatDead(slot);
+    }
+
+    @Override
+    public boolean isStadiumOccupied(int slot) {
+        return !comms.isStadiumBatterHeartbeatDead(slot);
     }
 }

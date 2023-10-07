@@ -10,6 +10,8 @@ public class Pitcher extends Robot {
 
     MicroPitcher microPitcher;
 
+    boolean isTargetingBall;
+
     public Pitcher(UnitController u) {
         super(u);
         microPitcher = new MicroPitcher(uc, this);
@@ -24,6 +26,11 @@ public class Pitcher extends Robot {
         if (shouldLoadNextTarget()) {
             loadNextTarget();
         }
+
+        isExploring = false;
+        isTargetingBase = false;
+        isTargetingStadium = false;
+        isTargetingBall = false;
     }
 
     // Pitchers don't rotate through enemy HQs
@@ -34,7 +41,7 @@ public class Pitcher extends Robot {
                 justStartedExploring = true;
             } else {
                 targetType = TargetType.BASE;
-                commsBaseIndex = 0;
+                baseVisited = new boolean[comms.BASE_SLOTS];
             }
         } else if (targetType == TargetType.BASE) {
             targetType = TargetType.EXPLORE;
@@ -42,10 +49,10 @@ public class Pitcher extends Robot {
         } else if (targetType == TargetType.EXPLORE) {
             if (uc.getRound() >= ROUNDS_FOR_ONLY_BASES) {
                 targetType = TargetType.BASE;
-                commsBaseIndex = 0;
+                baseVisited = new boolean[comms.BASE_SLOTS];
             } else {
                 targetType = TargetType.STADIUM;
-                commsStadiumIndex = 0;
+                stadiumVisited = new boolean[comms.STADIUM_SLOTS];
             }
         }
     }
@@ -81,9 +88,6 @@ public class Pitcher extends Robot {
         };
 
         Location visibleTarget = null;
-        boolean isTargetingBase = false;
-        boolean isTargetingStadium = false;
-        boolean isTargetingBall = false;
         if (!uc.getInfo().isCarryingBall() &&
                 (visibleTarget = getBestMapObj(MapObject.BALL, ballPred)) != null) {
             isTargetingBall = true;
@@ -98,7 +102,7 @@ public class Pitcher extends Robot {
         }
 
         if (visibleTarget != null) {
-            target = visibleTarget;
+            setTarget(visibleTarget);
         }
 
         // If you're not standing on a resource, check kill switch
@@ -160,46 +164,20 @@ public class Pitcher extends Robot {
         }
     }
 
-    @Override
-    public boolean shouldLoadNextTarget() {
-        if (super.shouldLoadNextTarget())
-            return true;
-
-        // If your slot has become occupied, rotate to the next target.
-        if (targetType == TargetType.BASE) {
-            return !comms.isBasePitcherHeartbeatDead(commsBaseIndex);
-        } else if (targetType == TargetType.STADIUM) {
-            return !comms.isStadiumPitcherHeartbeatDead(commsStadiumIndex) ||
-                    uc.getRound() >= ROUNDS_FOR_ONLY_BASES;
-        }
-
-        return false;
-    }
-
     public void loadNextTarget() {
         if (targetType == TargetType.BASE) {
-            while (commsBaseIndex < comms.BASE_SLOTS &&
-                    (target = comms.readBase(commsBaseIndex)).x != -1) {
-                if (comms.isBasePitcherHeartbeatDead(commsBaseIndex)) {
-                    return;
-                }
-                commsBaseIndex++;
+            if (!loadNextBase()) {
+                rotateTargetType();
+                loadNextTarget();
             }
-            rotateTargetType();
-            loadNextTarget();
         } else if (targetType == TargetType.STADIUM) {
-            while (commsStadiumIndex < comms.STADIUM_SLOTS &&
-                    (target = comms.readStadium(commsStadiumIndex)).x != -1) {
-                if (comms.isStadiumPitcherHeartbeatDead(commsStadiumIndex)) {
-                    return;
-                }
-                commsStadiumIndex++;
+            if (!loadNextStadium()) {
+                rotateTargetType();
+                loadNextTarget();
             }
-            rotateTargetType();
-            loadNextTarget();
         } else if (targetType == TargetType.EXPLORE) {
             if (justStartedExploring) {
-                target = explore.getExplore3Target();
+                setTarget(explore.getExplore3Target());
                 justStartedExploring = false;
             } else {
                 Location newTarget = explore.getExplore3Target();
@@ -208,9 +186,19 @@ public class Pitcher extends Robot {
                     rotateTargetType();
                     loadNextTarget();
                 } else {
-                    target = newTarget;
+                    setTarget(newTarget);
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isBaseOccupied(int slot) {
+        return !comms.isBasePitcherHeartbeatDead(slot);
+    }
+
+    @Override
+    public boolean isStadiumOccupied(int slot) {
+        return !comms.isStadiumPitcherHeartbeatDead(slot);
     }
 }

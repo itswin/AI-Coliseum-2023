@@ -36,8 +36,9 @@ public class Robot {
     public float MOVEMENT_COOLDOWN;
     public int ID;
 
-    public int commsBaseIndex;
-    public int commsStadiumIndex;
+    public int turnSetTarget;
+    public boolean[] baseVisited;
+    public boolean[] stadiumVisited;
 
     final class TargetTypeEnum {
         public final int STADIUM = 0;
@@ -52,6 +53,11 @@ public class Robot {
     public Location target;
     public boolean justStartedExploring;
     public int enemyHqIndex;
+    public int turnShouldHaveSeenTarget;
+
+    boolean isExploring;
+    boolean isTargetingBase;
+    boolean isTargetingStadium;
 
     public boolean didMicro;
 
@@ -100,8 +106,9 @@ public class Robot {
         ID = uc.getInfo().getID();
 
         targetType = TargetType.BASE;
-        commsBaseIndex = 0;
-        commsStadiumIndex = 0;
+        baseVisited = new boolean[comms.BASE_SLOTS];
+        stadiumVisited = new boolean[comms.STADIUM_SLOTS];
+
         target = null;
         justStartedExploring = false;
         enemyHqIndex = 0;
@@ -147,9 +154,26 @@ public class Robot {
 
     public boolean shouldLoadNextTarget() {
         // Always load next target if exploring
-        return target == null ||
-                uc.getLocation().distanceSquared(target) <= 2 ||
-                targetType == TargetType.EXPLORE;
+        if (target == null ||
+        // uc.getLocation().distanceSquared(target) <= 2 ||
+                targetType == TargetType.EXPLORE ||
+                uc.getRound() > turnShouldHaveSeenTarget)
+            return true;
+
+        // If your slot has become occupied, rotate to the next target.
+        if (targetType == TargetType.BASE || isTargetingBase) {
+            if (uc.getLocation().equals(target))
+                return false;
+            int baseSlot = util.getBaseSlot(target);
+            return baseSlot == -1 || isBaseOccupied(baseSlot);
+        } else if (targetType == TargetType.STADIUM || isTargetingStadium) {
+            if (uc.getLocation().equals(target))
+                return false;
+            int stadiumSlot = util.getStadiumSlot(target);
+            return stadiumSlot == -1 || isStadiumOccupied(stadiumSlot);
+        }
+
+        return false;
     }
 
     void move(Direction dir) {
@@ -189,5 +213,78 @@ public class Robot {
             return;
 
         target = comms.readEnemyHq();
+    }
+
+    // Units should override this.
+    public boolean isBaseOccupied(int slot) {
+        return false;
+    }
+
+    public boolean isStadiumOccupied(int slot) {
+        return false;
+    }
+
+    public boolean loadNextBase() {
+        Location loc;
+        Location closestLoc = null;
+        int closestLocIndex = -1;
+        double closestDist = Double.MAX_VALUE;
+        double dist;
+        for (int i = 0; i < comms.BASE_SLOTS; i++) {
+            loc = comms.readBase(i);
+            if (loc.x == -1)
+                break;
+            if (baseVisited[i] || isBaseOccupied(i))
+                continue;
+            dist = uc.getLocation().distanceSquared(loc);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestLoc = loc;
+                closestLocIndex = i;
+            }
+        }
+
+        if (closestLoc != null) {
+            baseVisited[closestLocIndex] = true;
+            setTarget(closestLoc);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean loadNextStadium() {
+        Location loc;
+        Location closestLoc = null;
+        int closestLocIndex = -1;
+        double closestDist = Double.MAX_VALUE;
+        double dist;
+        for (int i = 0; i < comms.STADIUM_SLOTS; i++) {
+            loc = comms.readStadium(i);
+            if (loc.x == -1)
+                break;
+            if (stadiumVisited[i] || isStadiumOccupied(i))
+                continue;
+            dist = uc.getLocation().distanceSquared(loc);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestLoc = loc;
+                closestLocIndex = i;
+            }
+        }
+
+        if (closestLoc != null) {
+            stadiumVisited[closestLocIndex] = true;
+            setTarget(closestLoc);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void setTarget(Location newTarget) {
+        target = newTarget;
+        turnShouldHaveSeenTarget = uc.getRound()
+                + 8 * (int) Math.sqrt(uc.getLocation().distanceSquared(target));
     }
 }
