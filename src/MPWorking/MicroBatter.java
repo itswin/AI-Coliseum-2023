@@ -125,6 +125,8 @@ public class MicroBatter {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
                 break;
             currentUnit = units[i];
+            if (currentUnit.getType() == UnitType.HQ)
+                continue;
             if (currentUnit.getType() == UnitType.BATTER) {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
@@ -213,8 +215,8 @@ public class MicroBatter {
     boolean applyAttack(MicroInfo bestMicro) {
         if (bestMicro.enemyTarget != null) {
             Direction dir = uc.getLocation().directionTo(bestMicro.enemyTarget);
-            if (uc.canBat(dir, 3)) {
-                uc.bat(dir, 3);
+            if (uc.canBat(dir, bestMicro.enemyBatStrength)) {
+                uc.bat(dir, bestMicro.enemyBatStrength);
                 return true;
             }
         }
@@ -480,8 +482,10 @@ public class MicroBatter {
                         if (type == UnitType.HQ) {
                             // Just assign a score of 25 to getting 100 points.
                             // Killing units is often more important.
-                            damageScore = 25;
-                            batStrength++;
+                            if (unitInfo.getTeam() != robot.team) {
+                                damageScore += 25;
+                                batStrength++;
+                            }
                             break;
                         } else if (type == UnitType.CATCHER) {
                             // No damage, unit isn't killed.
@@ -491,14 +495,11 @@ public class MicroBatter {
                             // Batter or pitcher
                             if (unitInfo.getTeam() == robot.team) {
                                 // Don't kill our own units :'(
-                                damageScore = -10;
-                                break;
+                                damageScore -= type.getStat(UnitStat.REP_COST);
                             } else {
                                 // Ignore the cost of balls, they're free lol.
-                                damageScore = type.getStat(UnitStat.REP_COST);
+                                damageScore += type.getStat(UnitStat.REP_COST);
                             }
-                            batStrength++;
-                            break;
                         }
                     }
                     batStrength++;

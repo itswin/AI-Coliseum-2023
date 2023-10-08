@@ -59,8 +59,6 @@ public class Robot {
     boolean isTargetingBase;
     boolean isTargetingStadium;
 
-    public boolean didMicro;
-
     public boolean hasTeamSeenEnemy;
 
     public final int MAX_UNIT_ARRAY_LENGTH = 5;
@@ -116,8 +114,6 @@ public class Robot {
         target = null;
         justStartedExploring = false;
         enemyHqIndex = 0;
-
-        didMicro = false;
 
         hasTeamSeenEnemy = false;
     }

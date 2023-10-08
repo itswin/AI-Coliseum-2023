@@ -21,7 +21,6 @@ public class Pitcher extends Robot {
     public void initTurn() {
         super.initTurn();
         comms.incrementPitchers();
-        didMicro = false;
 
         if (shouldLoadNextTarget()) {
             loadNextTarget();
@@ -60,9 +59,8 @@ public class Pitcher extends Robot {
     @Override
     public void takeTurn() {
         pickupBall();
-        if (roundSeenEnemyBatter == uc.getRound()) {
-            didMicro = microPitcher.doMicro();
-        }
+        if (microPitcher.doMicro())
+            return;
 
         Location currentLoc = uc.getLocation();
         ToDoubleFunction<Location> pred = (loc) -> {
@@ -111,9 +109,7 @@ public class Pitcher extends Robot {
         // checkKillSwitch();
         // }
 
-        if (!didMicro) {
-            nav.move(target);
-        }
+        nav.move(target);
 
         if (isTargetingBall) {
             pickupBall();

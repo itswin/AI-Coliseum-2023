@@ -63,6 +63,9 @@ public class MicroPitcher {
         if (!canAttack)
             currentActionRadius = RANGE_EXTENDED_BATTER;
 
+        boolean isThreatened = false;
+        boolean foundNonPitcher = false;
+
         i = units.length;
         for (; --i >= 0;) {
             if (uc.getEnergyLeft() < MAX_MICRO_BYTECODE_REMAINING)
@@ -72,11 +75,20 @@ public class MicroPitcher {
                 currentActionRadius = RANGE_BATTER;
                 currentExtendedActionRadius = RANGE_EXTENDED_BATTER;
                 numBatters++;
+                foundNonPitcher = true;
             } else {
+                if (currentUnit.getType() == UnitType.HQ)
+                    foundNonPitcher = true;
                 currentActionRadius = 0;
                 currentExtendedActionRadius = 0;
             }
             currentLoc = currentUnit.getLocation();
+
+            if (robot.nav.Bfs20.existsPathTo(currentLoc))
+                isThreatened = true;
+            else
+                continue;
+
             microInfo[0].updateEnemy();
             microInfo[1].updateEnemy();
             microInfo[2].updateEnemy();
@@ -88,6 +100,10 @@ public class MicroPitcher {
             microInfo[8].updateEnemy();
         }
 
+        if (!isThreatened)
+            return false;
+
+        boolean foundSupport = false;
         units = robot.allies;
         i = units.length;
         for (; --i >= 0;) {
@@ -96,6 +112,7 @@ public class MicroPitcher {
             currentUnit = units[i];
             if (currentUnit.getType() != UnitType.BATTER)
                 continue;
+            foundSupport = true;
             currentLoc = currentUnit.getLocation();
             microInfo[0].updateAlly();
             microInfo[1].updateAlly();
@@ -107,6 +124,9 @@ public class MicroPitcher {
             microInfo[7].updateAlly();
             microInfo[8].updateAlly();
         }
+
+        if (!foundNonPitcher && !foundSupport)
+            return false;
 
         alwaysInRange = !canAttack || numBatters >= 2 || (isArmedEnemyPitcher && numBatters > 0);
 
@@ -357,7 +377,7 @@ public class MicroPitcher {
             // it can hit it.
             Location attackLoc;
             int distToAttackLoc;
-            for (int i = 0; i < 8; i++) {
+            for (int i = 8; --i >= 0;) {
                 if (ballPlacementAttackLocs[i] == null)
                     continue;
                 attackLoc = ballPlacementAttackLocs[i];
