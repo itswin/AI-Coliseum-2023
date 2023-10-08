@@ -295,7 +295,7 @@ public class MicroBatter {
                 isArmedEnemyPitcher = true;
             if (dist <= RANGE_EXTENDED_BALL_BATTER && currentUnit.getType() == UnitType.BATTER)
                 possibleEnemyAssists++;
-            if (dist <= ACTION_RANGE && canAttack) {
+            if (dist <= ACTION_RANGE && canAttack && currentUnit.getType() != UnitType.HQ) {
                 // Calculate a score based on how much "damage"
                 // you deal by batting this enemy.
 
@@ -373,7 +373,7 @@ public class MicroBatter {
                 minDistToAlly = dist;
             if (currentUnit.getType() == UnitType.BATTER || currentUnit.isCarryingBall())
                 isSupported = true;
- 
+
             // If the ally is adjacent to this location and we can schedule it,
             // calculate a score based on potential damage dealt to the enemy.
             int currentUnitID = currentUnit.getID();
@@ -414,7 +414,11 @@ public class MicroBatter {
                             break;
                         currentEnemy = enemyUnits[i];
                         // Note: battedAllyLoc should never be where an enemy is now.
-                        damageScore += 15.0 - battedAllyLoc.distanceSquared(currentEnemy.getLocation());
+                        if (currentEnemy.getType() == UnitType.HQ) {
+                            damageScore -= 15;
+                        } else {
+                            damageScore += 15.0 - battedAllyLoc.distanceSquared(currentEnemy.getLocation());
+                        }
                     }
 
                     if (canScheduleUnit) {
