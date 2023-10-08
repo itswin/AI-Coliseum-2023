@@ -63,6 +63,10 @@ public class Robot {
 
     public boolean hasTeamSeenEnemy;
 
+    public final int MAX_UNIT_ARRAY_LENGTH = 5;
+    public final int VISION_RANGE_MID = 10;
+    public final int VISION_RANGE_LOW = 8;
+
     public Robot(UnitController u) {
         uc = u;
 
@@ -126,8 +130,44 @@ public class Robot {
             util.mapBoundsInitialized = comms.readMapBoundsIntialized() == 1;
         }
 
-        enemies = uc.senseUnits(VISION_RANGE, opponent);
-        allies = uc.senseUnits(VISION_RANGE, team);
+        UnitInfo[] newUnitsFull = uc.senseUnits(VISION_RANGE, opponent);
+        if (newUnitsFull.length > MAX_UNIT_ARRAY_LENGTH) {
+            UnitInfo[] newUnitsMid = uc.senseUnits(VISION_RANGE_MID, opponent);
+            if (newUnitsMid.length > MAX_UNIT_ARRAY_LENGTH) {
+                UnitInfo[] newUnitsLow = uc.senseUnits(VISION_RANGE_LOW, opponent);
+                if (newUnitsLow.length == 0) {
+                    enemies = newUnitsMid;
+                } else {
+                    enemies = newUnitsLow;
+                }
+            } else if (newUnitsMid.length == 0) {
+                enemies = newUnitsFull;
+            } else {
+                enemies = newUnitsMid;
+            }
+        } else {
+            enemies = newUnitsFull;
+        }
+
+        newUnitsFull = uc.senseUnits(VISION_RANGE, team);
+        if (newUnitsFull.length > MAX_UNIT_ARRAY_LENGTH) {
+            UnitInfo[] newUnitsMid = uc.senseUnits(VISION_RANGE_MID, team);
+            if (newUnitsMid.length > MAX_UNIT_ARRAY_LENGTH) {
+                UnitInfo[] newUnitsLow = uc.senseUnits(VISION_RANGE_LOW, team);
+                if (newUnitsLow.length == 0) {
+                    allies = newUnitsMid;
+                } else {
+                    allies = newUnitsLow;
+                }
+            } else if (newUnitsMid.length == 0) {
+                allies = newUnitsFull;
+            } else {
+                allies = newUnitsMid;
+            }
+        } else {
+            allies = newUnitsFull;
+        }
+
         computeClosestEnemyBatter();
 
         if (!hasTeamSeenEnemy) {
