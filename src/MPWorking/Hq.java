@@ -378,10 +378,11 @@ public class Hq extends Robot {
     }
 
     public void tryConstructBallAdjacent(Direction dir) {
-        if (uc.canConstructBall(dir.rotateLeft())) {
-            uc.constructBall(dir.rotateLeft());
-        } else if (uc.canConstructBall(dir.rotateRight())) {
-            uc.constructBall(dir.rotateRight());
+        for (Direction d : util.getInOrderDirections(dir)) {
+            if (uc.canConstructBall(d)) {
+                uc.constructBall(d);
+                return;
+            }
         }
     }
 

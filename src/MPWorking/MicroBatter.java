@@ -373,14 +373,14 @@ public class MicroBatter {
                 minDistToAlly = dist;
             if (currentUnit.getType() == UnitType.BATTER || currentUnit.isCarryingBall())
                 isSupported = true;
-
+ 
             // If the ally is adjacent to this location and we can schedule it,
             // calculate a score based on potential damage dealt to the enemy.
             int currentUnitID = currentUnit.getID();
             if (dist <= 2 &&
                     uc.canAct() &&
                     currentUnit.getType() == UnitType.BATTER) {
-                boolean canScheduleUnit = uc.canSchedule(currentUnitID);
+                boolean canScheduleUnit = uc.canSchedule(currentUnitID) && currentUnit.getCurrentMovementCooldown() < 2;
                 float damageScore;
                 int batStrength = 0;
                 Direction allyDir = location.directionTo(currentLoc);
