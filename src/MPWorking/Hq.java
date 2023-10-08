@@ -173,8 +173,6 @@ public class Hq extends Robot {
 
         if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
             uc.recruitUnit(recruitType, dir);
-            exploreDirIndex++;
-            exploreDirIndex %= exploreDirections.length;
             nextFlag = util.dirToFlag(dir);
 
             if (recruitType == UnitType.PITCHER) {
@@ -184,33 +182,37 @@ public class Hq extends Robot {
     }
 
     public void defendAction() {
-        // CloseHQs doesn't build any pitchers without this lol.
-        if (numPitchers < 1) {
-            UnitType recruitType = UnitType.PITCHER;
-            Direction dir = getNextBuildDir();
-            if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
-                uc.recruitUnit(recruitType, dir);
-                exploreDirIndex++;
-                exploreDirIndex %= exploreDirections.length;
-                nextFlag = util.dirToFlag(dir);
-                tryConstructBallAdjacent(dir);
+        // Build 1 batter 1 pitcher at the same time if there are enemies around.
+        if (uc.getReputation() < UnitType.BATTER.getStat(UnitStat.REP_COST) +
+                UnitType.PITCHER.getStat(UnitStat.REP_COST) + (int) GameConstants.BALL_COST)
+            return;
+
+        int id = -1;
+        Direction dir = getNextBuildDir();
+        if (dir == null)
+            return;
+
+        if (uc.canRecruitUnit(UnitType.PITCHER, dir)) {
+            uc.recruitUnit(UnitType.PITCHER, dir);
+            nextFlag = util.dirToFlag(dir);
+            tryConstructBallAdjacent(dir);
+            UnitInfo unit = uc.senseUnitAtLocation(uc.getLocation().add(dir));
+            if (unit != null) {
+                id = unit.getID();
             }
         }
 
-        UnitType recruitType = UnitType.BATTER;
-
-        // Build 2 batters at a time if there are enemies around.
-        final int NUM_BATTERS_TO_BUILD = 2;
-        if (uc.getReputation() >= UnitType.BATTER.getStat(UnitStat.REP_COST) * NUM_BATTERS_TO_BUILD) {
-            for (int i = 0; i < NUM_BATTERS_TO_BUILD; i++) {
-                Direction dir = getNextBuildDir();
-                if (dir != null && uc.canRecruitUnit(recruitType, dir)) {
-                    uc.recruitUnit(recruitType, dir);
-                    exploreDirIndex++;
-                    exploreDirIndex %= exploreDirections.length;
-                    nextFlag = util.dirToFlag(dir);
-                }
+        for (Direction d : util.getInOrderDirections(dir)) {
+            if (uc.canRecruitUnit(UnitType.BATTER, d)) {
+                uc.recruitUnit(UnitType.BATTER, d);
+                break;
             }
+        }
+
+        if (id != -1 && uc.canSchedule(id)) {
+            // Schedule the pitcher so that it moves before the batter.
+            // We build it first so that we can more likely build the ball adjacent.
+            uc.schedule(id);
         }
     }
 
