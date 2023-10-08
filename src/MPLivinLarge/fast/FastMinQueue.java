@@ -1,4 +1,4 @@
-package MPJustDontDie.fast;
+package MPLivinLarge.fast;
 
 // Kinda buggy. Don't use.
 public class FastMinQueue<T extends Comparable<? super T>> {

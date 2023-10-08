@@ -1,10 +1,10 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
 import aic2023.user.*;
 
 import java.util.function.ToDoubleFunction;
 
-import MPJustDontDie.fast.*;
+import MPLivinLarge.fast.*;
 
 public class Robot {
     public UnitController uc;

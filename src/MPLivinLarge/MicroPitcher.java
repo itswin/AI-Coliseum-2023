@@ -1,4 +1,4 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
 import aic2023.user.*;
 

@@ -1,7 +1,6 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
-import MPJustDontDie.fast.*;
-
+import MPLivinLarge.fast.*;
 import aic2023.user.*;
 
 public class Pathfinding {

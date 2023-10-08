@@ -1,4 +1,4 @@
-package MPJustDontDie.fast;
+package MPLivinLarge.fast;
 
 /**
  * An implementation of a ring buffer queue

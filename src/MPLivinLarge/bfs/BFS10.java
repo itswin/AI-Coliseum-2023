@@ -1,4 +1,4 @@
-package MPJustDontDie.bfs;
+package MPLivinLarge.bfs;
 
 import aic2023.user.*;
 

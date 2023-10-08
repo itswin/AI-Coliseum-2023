@@ -1,9 +1,8 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
 import java.util.function.BiPredicate;
 
-import MPJustDontDie.fast.*;
-
+import MPLivinLarge.fast.*;
 import aic2023.user.*;
 
 public class MapTracker {

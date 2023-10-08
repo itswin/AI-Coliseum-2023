@@ -1,4 +1,4 @@
-package MPJustDontDie.fast;
+package MPLivinLarge.fast;
 
 public class FastIntSet {
     final int INT_BITS = 32;

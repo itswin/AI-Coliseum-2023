@@ -1,4 +1,4 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToDoubleBiFunction;

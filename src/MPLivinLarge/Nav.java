@@ -1,8 +1,7 @@
-package MPJustDontDie;
+package MPLivinLarge;
 
+import MPLivinLarge.bfs.*;
 import aic2023.user.*;
-
-import MPJustDontDie.bfs.*;
 
 public class Nav {
     UnitController uc;
