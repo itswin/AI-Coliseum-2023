@@ -2,7 +2,8 @@
 1 Musketeer's code for AIC2023. I placed first!
 
 # Game Replay
-https://github.com/itswin/AI-Coliseum-2023/assets/15388838/9e2c3276-0863-4592-82a7-cc73aeb5e1c2
+
+https://github.com/itswin/AI-Coliseum-2023/assets/15388838/05510c06-2a03-4aee-84b1-dffc4bf21abd
 
 # Some strategy highlights
 - Explore more aggressively before you've seen an enemy.
